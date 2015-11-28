@@ -1,10 +1,9 @@
 <?php
 namespace Poirot\HttpAgent;
 
+use Poirot\ApiClient\AbstractClient;
 use Poirot\ApiClient\Interfaces\iConnection;
 use Poirot\ApiClient\Interfaces\iPlatform;
-use Poirot\ApiClient\Interfaces\Request\iApiMethod;
-use Poirot\ApiClient\Interfaces\Response\iResponse;
 use Poirot\Core\BuilderSetterTrait;
 use Poirot\Http\Interfaces\Message\iHttpResponse;
 use Poirot\Http\Message\HttpRequest;
@@ -14,7 +13,8 @@ use Poirot\HttpAgent\Interfaces\iHttpAgent;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Psr\Interfaces\RequestInterface;
 
-class Agent implements iHttpAgent
+class Agent extends AbstractClient
+    implements iHttpAgent
 {
     use BuilderSetterTrait;
 
@@ -190,38 +190,6 @@ class Agent implements iHttpAgent
     }
 
     /**
-     * Get Connection Adapter
-     *
-     * @return iConnection
-     */
-    function connection()
-    {
-        // TODO: Implement connection() method.
-    }
-
-    /**
-     * Execute Request
-     *
-     * - get and prepare connection via platform
-     * - build method and params via platform
-     * - send request
-     * - build response via platform
-     * - return response
-     *
-     * @param iApiMethod $method Server Exec Method
-     *
-     * @throws \Exception
-     *
-     * throws Exception when $method Object is null
-     *
-     * @return iResponse
-     */
-    function call(iApiMethod $method)
-    {
-        // TODO: Implement call() method.
-    }
-
-    /**
      * Get Client Platform
      *
      * - used by request to build params for
@@ -232,5 +200,15 @@ class Agent implements iHttpAgent
     function platform()
     {
         // TODO: Implement platform() method.
+    }
+
+    /**
+     * Get Connection Adapter
+     *
+     * @return iConnection
+     */
+    function connection()
+    {
+        // TODO: Implement connection() method.
     }
 }
