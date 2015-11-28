@@ -1,0 +1,23 @@
+{
+    "name": "poirot/htp-agent"
+    , "description": "PHP Http Client."
+    , "type"       : "library"
+    , "authors": [
+        {
+            "name": "Payam Naderi"
+            , "email": "naderi.payam@gmail.com"
+            , "role": "Developer"
+        }
+    ],
+    "require": {
+        "poirot/core": "dev-master"
+        , "poirot/api-client": "dev-master"
+        , "poirot/http": "dev-master"
+    },
+    "target-dir": "Poirot/HttpAgent"
+    , "autoload"  : {
+        "psr-0": {
+            "Poirot\\HttpAgent": "."
+        }
+    }
+}
