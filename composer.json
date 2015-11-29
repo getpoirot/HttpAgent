@@ -1,5 +1,5 @@
 {
-    "name": "poirot/htp-agent"
+    "name": "poirot/http-agent"
     , "description": "PHP Http Client."
     , "type"       : "library"
     , "authors": [
