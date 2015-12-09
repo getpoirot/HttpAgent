@@ -7,8 +7,9 @@ use Poirot\ApiClient\Interfaces\Request\iApiMethod;
 use Poirot\ApiClient\Interfaces\Response\iResponse;
 use Poirot\Core\AbstractOptions;
 use Poirot\Core\Interfaces\iDataSetConveyor;
-use Poirot\Core\Interfaces\OptionsProviderInterface;
 use Poirot\Http\Interfaces\iHeaderCollection;
+use Poirot\Http\Interfaces\Message\iHttpRequest;
+use Poirot\Http\Psr\Interfaces\RequestInterface;
 use Poirot\HttpAgent\Connection\HAStreamConn;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\Interfaces\iSeqPathUri;
@@ -17,7 +18,6 @@ use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Psr\StreamInterface;
 
 class Agent implements iClient
-    , OptionsProviderInterface
 {
     /** @var HAStreamConn|iConnection*/
     protected $connection;
@@ -33,8 +33,7 @@ class Agent implements iClient
      */
     function __construct($options = null)
     {
-        if ($options !== null)
-            $this->options()->from($options);
+
     }
 
     /**
@@ -74,40 +73,56 @@ class Agent implements iClient
      *
      * - using absolute url as target not depend on current request base url
      *
+     * - create method build from platform, platform will build request object from that
+     *
      * @param string|iHttpUri|UriInterface $targetUri Relative Uri that merged into base url
      *
-     * @return iResponse
+     * @return iHttpRequest
      */
-    function sendOPTIONS($targetUri) {}
+    function OPTIONS($targetUri) {}
 
     /**
      * @param string|iSeqPathUri|iHttpUri|UriInterface $targetUri
      * @param array|iHeaderCollection|null             $headers
      * @param array|iDataSetConveyor|null              $options
      */
-    function sendGET($targetUri, $headers = null, $options = null) {}
+    function GET($targetUri, $headers = null, $options = null) {}
 
-    function sendHEAD($targetUri, $headers = null, $options = null) {}
+    function HEAD($targetUri, $headers = null, $options = null) {}
 
     /**
      * @param string|iSeqPathUri|iHttpUri|UriInterface         $targetUri
      * @param string|iStreamable|StreamInterface|resource|null $body
      * @param array|iHeaderCollection|null                     $headers
-     * @param array|iDataSetConveyor|null                      $options
+     * @param array|AgentOptions|iDataSetConveyor|null         $options
+     *                                                         Agent Options To Merge With Default Agent Options
      */
-    function sendPATCH($targetUri, $body = null, $headers = null, $options = null) {}
+    function PATCH($targetUri, $body = null, $headers = null, $options = null) {}
 
-    function sendPOST($targetUri, $body = null, $headers = null, $options = null) {}
+    function POST($targetUri, $body = null, $headers = null, $options = null) {}
 
-    function sendPUT($targetUri, $body = null, $headers = null, $options = null) {}
+    function PUT($targetUri, $body = null, $headers = null, $options = null) {}
 
-    function sendDELETE($targetUri, $body = null, $headers = null, $options = null) {}
+    function DELETE($targetUri, $body = null, $headers = null, $options = null) {}
 
-    function sendTRACE($targetUri) {}
+    function TRACE($targetUri) {}
 
-    function sendCONNECT($targetUri) {}
+    function CONNECT($targetUri) {}
 
     /**
+     * Send Request Object Via Connection
+     *
+     * ! if request object is null must using latest request method built
+     *
+     * @param iHttpRequest|RequestInterface|null $request
+     *
+     * @return iResponse
+     */
+    function send($request = null) {}
+
+    /**
+     * !! WE HAVE CUSTOM METHOD REQUESTS
+     *
      * @inheritdoc
      * @throws \RuntimeException
      */
@@ -119,7 +134,7 @@ class Agent implements iClient
         );
     }
 
-    protected function _v__call(iApiMethod $method)
+    protected function _f__call(iApiMethod $method)
     {
         $platform = $this->platform();
 
@@ -130,29 +145,6 @@ class Agent implements iClient
         return $response;
     }
 
-
     // ...
 
-    /**
-     * @inheritdoc
-     *
-     * @return AgentOptions
-     */
-    function options()
-    {
-        if (!$this->options)
-            $this->options = static::optionsIns();
-
-        return $this->options;
-    }
-
-    /**
-     * @inheritdoc
-     *
-     * @return AgentOptions
-     */
-    static function optionsIns()
-    {
-        return new AgentOptions;
-    }
 }
