@@ -14,7 +14,7 @@ use Poirot\PathUri\Psr\UriInterface;
 /**
  * This is open options because may contains options for attached plugins
  */
-class AgentOptions extends OpenOptions
+class BrowserOptions extends OpenOptions
 {
     /** @var string|iHttpUri|UriInterface Base Url to Server */
     protected $baseUrl;

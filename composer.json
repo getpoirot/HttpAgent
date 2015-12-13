@@ -13,6 +13,7 @@
         "poirot/core": "dev-master"
         , "poirot/api-client": "dev-master"
         , "poirot/http": "dev-master"
+        , "poirot/events": "dev-master"
     },
     "target-dir": "Poirot/HttpAgent"
     , "autoload"  : {

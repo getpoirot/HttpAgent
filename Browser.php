@@ -17,19 +17,19 @@ use Poirot\PathUri\Psr\UriInterface;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Psr\StreamInterface;
 
-class Agent implements iClient
+class Browser implements iClient
 {
     /** @var HAStreamConn|iConnection*/
     protected $connection;
     /** @var HttpPlatform */
     protected $platform;
-    /** @var AgentOptions */
+    /** @var BrowserOptions */
     protected $options;
 
     /**
      * Construct
      *
-     * @param AgentOptions|iDataSetConveyor|null $options
+     * @param BrowserOptions|iDataSetConveyor|null $options
      */
     function __construct($options = null)
     {
@@ -94,7 +94,7 @@ class Agent implements iClient
      * @param string|iSeqPathUri|iHttpUri|UriInterface         $targetUri
      * @param string|iStreamable|StreamInterface|resource|null $body
      * @param array|iHeaderCollection|null                     $headers
-     * @param array|AgentOptions|iDataSetConveyor|null         $options
+     * @param array|BrowserOptions|iDataSetConveyor|null       $options
      *                                                         Agent Options To Merge With Default Agent Options
      */
     function PATCH($targetUri, $body = null, $headers = null, $options = null) {}
