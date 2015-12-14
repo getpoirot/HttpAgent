@@ -5,29 +5,37 @@ use Poirot\ApiClient\AbstractConnection;
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Core\Interfaces\iDataSetConveyor;
-use Poirot\Events\BaseEvents;
-use Poirot\Events\Interfaces\iEvent;
 use Poirot\Events\Interfaces\Respec\iEventProvider;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
-use Poirot\Http\Interfaces\Message\iHttpResponse;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\Http\Psr\Interfaces\RequestInterface;
-use Poirot\HttpAgent\Transporter\Listeners\onResponseReadHeaders;
-use Poirot\Stream\Interfaces\iSResource;
-use Poirot\Stream\Interfaces\iStreamable;
+use Poirot\HttpAgent\Transporter\Listeners\onResponseHeadersReceived;
 use Poirot\Stream\Streamable;
 use Poirot\Stream\StreamClient;
 
 class StreamHttpTransporter extends AbstractConnection
     implements iEventProvider
 {
-    /** @var iSResource When Connected */
-    protected $connected;
+    /** @var Streamable When Connected */
+    protected $streamable;
     /** @var  */
     protected $connected_options;
+
+    /** @var bool  */
+    protected $isRequestComplete = false;
+
+    /**
+     * Write Received Server Data To It Until Complete
+     * @var Streamable\TemporaryStream */
+    protected $_buffer;
+    protected $_buffer_seek = 0; # current buffer write position
+    /** @var HttpResponse */
+    protected $_completed_response;
+
     /** @var StreamHttpEvents */
     protected $event;
+
 
     /**
      * Construct
@@ -39,7 +47,6 @@ class StreamHttpTransporter extends AbstractConnection
     function __construct($options = null)
     {
         parent::__construct($options);
-
         $this->__attachDefaultListeners();
     }
 
@@ -57,7 +64,8 @@ class StreamHttpTransporter extends AbstractConnection
             ## close current connection if connected
             $this->close();
 
-        $streamClient = $this->__getSocketClient();
+
+        $streamClient = new StreamClient;
 
         # apply options to resource
         ## options will not take an affect after connect
@@ -79,11 +87,12 @@ class StreamHttpTransporter extends AbstractConnection
         $streamClient->setPersistent($this->options()->getPersistent());
         $streamClient->setTimeout($this->options()->getTimeout());
 
-        $this->connected = $streamClient->getConnect();
+        $resource = $streamClient->getConnect();
+        $this->streamable = new Streamable($resource);
     }
 
     /**
-     * Execute Expression
+     * Send Expression To Server
      *
      * - send expression to server through connection
      *   resource
@@ -91,63 +100,172 @@ class StreamHttpTransporter extends AbstractConnection
      * @param iHttpRequest|RequestInterface|string $expr Expression
      *
      * @throws ApiCallException
-     * @return iHttpResponse
+     * @return HttpResponse Prepared Server Response
      */
-    function exec($expr)
+    function send($expr)
     {
-        if ($expr instanceof RequestInterface)
+        # prepare new request
+        $this->isRequestComplete = false;
+        ## destruct buffer
+        $this->_getBufferStream()->getResource()->close();
+        $this->_buffer = null;
+        $this->_completed_response = null;
+
+        # get connect if not
+        if (!$this->isConnected() || !$this->streamable->getResource()->isAlive())
+            $this->getConnect();
+
+        if (is_string($expr))
+            $expr = new HttpRequest($expr);
+        elseif ($expr instanceof RequestInterface)
             ## convert PSR request to Poirot
             $expr = new HttpRequest($expr);
 
-        if (!$expr instanceof iHttpRequest && !is_string($expr))
+        if (!$expr instanceof iHttpRequest)
             throw new \InvalidArgumentException(sprintf(
                 'Http Expression must instance of iHttpRequest, RequestInterface or string. given: "%s".'
                 , \Poirot\Core\flatten($expr)
             ));
 
-        # get connect if not
-        if (!$this->isConnected() || !$this->connected->isAlive())
-            $this->getConnect();
-
 
         # write stream
-        if (is_string($expr))
-            $stream = $this->__sendPlainString($expr);
-        else
-            $stream = $this->__sendRequestObject($expr);
+        try
+        {
+            $response = $this->__handleRequest($expr);
+        } catch (\Exception $e) {
+            $this->isRequestComplete = false;
+            throw new ApiCallException(sprintf(
+                'Request Call Error When Send To Server (%s)'
+                , $this->streamable->getResource()->getRemoteName()
+            ), 0, 1, __FILE__, __LINE__, $e);
+        }
 
-
-        # read response
-        $response = $this->__readResponse($stream);
+        $this->isRequestComplete = true;
         return $response;
     }
 
     /**
-     * Read Response From Server When Request Was Sent
-     * @param iStreamable $stream
-     * @return string
+     * Send Request To Server
+     *
+     * @param iHttpRequest $expr
+     * @return HttpResponse
      */
-    protected function __readResponse($stream)
+        protected function __handleRequest(iHttpRequest $expr)
+        {
+            $stream = $this->streamable;
+
+            # send request, first headers
+            $stream->write($expr->renderRequestLine());
+            $stream->write($expr->renderHeaders());
+
+            # receive response headers once request sent
+            $headersStr = $this->receive()->read();
+            $response   = new HttpResponse($headersStr);
+            $emitter = $this->event()->trigger(StreamHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, [
+                'response'    => $response,
+                'transporter' => $this,
+                'request'     => $expr,
+            ]);
+
+            if (!$emitter->collector()->getContinue())
+                return $response;
+
+            # send request body
+            $body = $expr->getBody();
+            if (is_string($body))
+                $body = new Streamable\TemporaryStream($body);
+            $body->pipeTo($stream);
+
+            # receive rest response body
+            $bodyStream = $this->receive();
+            // TODO Made new stream
+            // TODO stream part, it will start x byte from start
+            // TODO add filters based on content-type (chunked, zip, ...)
+            $response->setBody($bodyStream);
+
+            return $response;
+        }
+
+    /**
+     * Is Request Complete
+     *
+     * - return false if not request was sent
+     * - also return true if response available
+     *
+     * @return bool
+     */
+    function isRequestComplete()
     {
-        $response = '';
-        while($line = $stream->readLine("\r\n")) {
-            $response .= $line."\r\n";
+        return $this->isRequestComplete;
+    }
+
+    /**
+     * Reset Response Data
+     *
+     * - clear current data gathering from server response
+     *
+     * @return $this
+     */
+    function reset()
+    {
+        if ($this->_buffer)
+            $this->_buffer->getResource()->close();
+
+        $this->_buffer = null;
+        return $this;
+    }
+
+    /**
+     * Receive Server Response
+     *
+     * !! return response object if request completely sent
+     *
+     * - it will executed after a request call to server
+     *   from send expression method to receive responses
+     * - return null if request not sent or complete
+     * - it must always return raw response body from server
+     *
+     * @throws \Exception No Connection established
+     * @return null|string|Streamable
+     */
+    function receive()
+    {
+        if ($this->isRequestComplete())
+            return null;
+
+        ## so we can read later from latest position to end
+        ## in example when we write header we can retrieve header next time
+        $curSeek = $this->_buffer_seek;
+
+        $stream = $this->streamable;
+        while(!$stream->getResource()->isEOF() && ($line = $stream->readLine("\r\n")) !== null ) {
+            $break = false;
+            $response = $line."\r\n";
             if (trim($line) === '') {
                 ## http headers part read complete
                 $response .= "\r\n";
-                break;
+                $break = true;
             }
+
+            $this->_getBufferStream()->seek($this->_buffer_seek);
+            $this->_getBufferStream()->write($response);
+            $this->_buffer_seek += $this->_getBufferStream()->getTransCount();
+
+            if ($break) break;
         }
 
-        $response = new HttpResponse($response);
-        $this->event()->trigger(StreamHttpEvents::EVENT_RESPONSE_HEAD_READ, [
-            'response'    => $response,
-            'stream'      => $stream,
-            'transporter' => $this,
-        ]);
-
-        return $response;
+        return $this->_getBufferStream()->seek($curSeek);
     }
+
+        protected function _getBufferStream()
+        {
+            if (!$this->_buffer) {
+                $this->_buffer = new Streamable\TemporaryStream();
+                $this->_buffer_seek = 0;
+            }
+
+            return $this->_buffer;
+        }
 
     /**
      * Is Connection Resource Available?
@@ -156,7 +274,7 @@ class StreamHttpTransporter extends AbstractConnection
      */
     function isConnected()
     {
-        return ($this->connected !== null);
+        return ($this->streamable !== null);
     }
 
     /**
@@ -168,48 +286,9 @@ class StreamHttpTransporter extends AbstractConnection
         if (!$this->isConnected())
             return;
 
-        $this->connected->close();
+        $this->streamable->getResource()->close();
+        $this->streamable = null;
         $this->connected_options = null;
-    }
-
-
-    // ...
-
-    /**
-     * Send Request To Server
-     * @param string $expr
-     * @return Streamable
-     */
-    protected function __sendPlainString($expr)
-    {
-        $stream = $this->__newStreamable();
-        $stream->write($expr);
-
-        return $stream;
-    }
-
-    /**
-     * Send Request To Server
-     * @param iHttpRequest $expr
-     * @return Streamable
-     */
-    protected function __sendRequestObject(iHttpRequest $expr)
-    {
-        $stream = $this->__newStreamable();
-
-        $stream->write($expr->renderRequestLine());
-        $stream->write($expr->renderHeaders());
-
-        $body = $expr->getBody();
-        if ($body instanceof iStreamable)
-            $body->pipeTo($stream);
-
-        return $stream;
-    }
-
-    protected function __newStreamable()
-    {
-        return new Streamable($this->connected);
     }
 
 
@@ -230,7 +309,6 @@ class StreamHttpTransporter extends AbstractConnection
 
     /**
      * @override just for ide completion
-     *
      * @return StreamHttpTransporterOptions
      */
     function options()
@@ -244,7 +322,6 @@ class StreamHttpTransporter extends AbstractConnection
 
     /**
      * @override
-     *
      * @return StreamHttpTransporterOptions
      */
     static function optionsIns()
@@ -255,21 +332,11 @@ class StreamHttpTransporter extends AbstractConnection
 
     // ...
 
-    /**
-     * @return StreamClient
-     */
-    protected function __getSocketClient()
-    {
-        $client = new StreamClient;
-
-        return $client;
-    }
-
     protected function __attachDefaultListeners()
     {
         $this->event()->on(
-            StreamHttpEvents::EVENT_RESPONSE_HEAD_READ
-            , new onResponseReadHeaders
+            StreamHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED
+            , new onResponseHeadersReceived
             , 100
         );
     }

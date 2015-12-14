@@ -4,10 +4,11 @@ namespace Poirot\HttpAgent\Transporter;
 use Poirot\Events\BaseEvent;
 use Poirot\Events\BaseEvents;
 use Poirot\Events\EventBuilder;
+use Poirot\HttpAgent\Transporter\Listeners\StreamHttpEventCollector;
 
 class StreamHttpEvents extends BaseEvents
 {
-    const EVENT_RESPONSE_HEAD_READ = 'response.head.read';
+    const EVENT_RESPONSE_HEADERS_RECEIVED = 'response.head.read';
 
     /**
      * Construct
@@ -22,7 +23,12 @@ class StreamHttpEvents extends BaseEvents
     {
         parent::__construct($setter);
 
+        $this->setCollector(new StreamHttpEventCollector);
+
         // attach default event names:
-        $this->bind(new BaseEvent(self::EVENT_RESPONSE_HEAD_READ));
+        ## also share this collector into them
+        $this->bindShare(new BaseEvent(self::EVENT_RESPONSE_HEADERS_RECEIVED));
     }
+
+
 }
