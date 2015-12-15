@@ -2,14 +2,17 @@
 namespace Poirot\HttpAgent\Transporter\Listeners;
 
 use Poirot\Core\AbstractOptions;
+use Poirot\Core\OpenOptions;
 
-class StreamHttpEventCollector extends AbstractOptions
+class StreamHttpEventCollector extends OpenOptions
 {
     protected $response;
     protected $transporter;
     protected $request;
 
+    // get back results
     protected $continue = true;
+    protected $body;
 
     /**
      * @return mixed
@@ -75,5 +78,21 @@ class StreamHttpEventCollector extends AbstractOptions
     public function setContinue($continue)
     {
         $this->continue = $continue;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBody()
+    {
+        return $this->body;
+    }
+
+    /**
+     * @param mixed $body
+     */
+    public function setBody($body)
+    {
+        $this->body = $body;
     }
 }

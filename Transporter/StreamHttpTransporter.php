@@ -10,9 +10,31 @@ use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\Http\Psr\Interfaces\RequestInterface;
+use Poirot\HttpAgent\Transporter\Listeners\onResponseBodyReceived;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseHeadersReceived;
 use Poirot\Stream\Streamable;
 use Poirot\Stream\StreamClient;
+
+/*
+$psrPath = new HttpUri('http://www.raya-media.com/');
+$path    = new \Poirot\PathUri\HttpUri($psrPath);
+
+$request = (new HttpRequest(['method' => 'GET', 'host' => 'raya-media.com', 'headers' => [
+    'Accept' => '* /*',
+    'User-Agent' => 'Poirot/Client HTTP',
+    'Accept-Encoding' => 'gzip, deflate, sdch',
+]]))->toString();
+
+$stream = new StreamHttpTransporter(
+    StreamHttpTransporter::optionsIns()
+        ->setServerUrl($path)
+        ->setTimeout(30)
+        ->setPersistent(true)
+);
+
+$response = $stream->send($request);
+kd($response->toString());
+*/
 
 class StreamHttpTransporter extends AbstractConnection
     implements iEventProvider
@@ -178,9 +200,18 @@ class StreamHttpTransporter extends AbstractConnection
 
             # receive rest response body
             $bodyStream = $this->receive();
-            // TODO Made new stream
-            // TODO stream part, it will start x byte from start
-            // TODO add filters based on content-type (chunked, zip, ...)
+            ## subset stream to body part without headers, seek will always point to body
+            $bodyStream = new Streamable\SegmentWrapStream($bodyStream, -1, $bodyStream->getCurrOffset());
+            $emitter = $this->event()->trigger(StreamHttpEvents::EVENT_RESPONSE_BODY_RECEIVED, [
+                'response'    => $response,
+                'transporter' => $this,
+
+                'body'        => $bodyStream,
+
+                'request'     => $expr,
+            ]);
+
+            $bodyStream = $emitter->collector()->getBody();
             $response->setBody($bodyStream);
 
             return $response;
@@ -238,7 +269,7 @@ class StreamHttpTransporter extends AbstractConnection
         $curSeek = $this->_buffer_seek;
 
         $stream = $this->streamable;
-        while(!$stream->getResource()->isEOF() && ($line = $stream->readLine("\r\n")) !== null ) {
+        while(!$stream->isEOF() && ($line = $stream->readLine("\r\n")) !== null ) {
             $break = false;
             $response = $line."\r\n";
             if (trim($line) === '') {
@@ -337,6 +368,12 @@ class StreamHttpTransporter extends AbstractConnection
         $this->event()->on(
             StreamHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED
             , new onResponseHeadersReceived
+            , 100
+        );
+
+        $this->event()->on(
+            StreamHttpEvents::EVENT_RESPONSE_BODY_RECEIVED
+            , new onResponseBodyReceived
             , 100
         );
     }

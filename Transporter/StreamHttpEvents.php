@@ -8,7 +8,8 @@ use Poirot\HttpAgent\Transporter\Listeners\StreamHttpEventCollector;
 
 class StreamHttpEvents extends BaseEvents
 {
-    const EVENT_RESPONSE_HEADERS_RECEIVED = 'response.head.read';
+    const EVENT_RESPONSE_HEADERS_RECEIVED = 'response.head.receive';
+    const EVENT_RESPONSE_BODY_RECEIVED    = 'response.body.receive';
 
     /**
      * Construct
@@ -28,7 +29,6 @@ class StreamHttpEvents extends BaseEvents
         // attach default event names:
         ## also share this collector into them
         $this->bindShare(new BaseEvent(self::EVENT_RESPONSE_HEADERS_RECEIVED));
+        $this->bindShare(new BaseEvent(self::EVENT_RESPONSE_BODY_RECEIVED));
     }
-
-
 }

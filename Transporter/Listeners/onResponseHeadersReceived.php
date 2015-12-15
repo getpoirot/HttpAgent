@@ -37,6 +37,7 @@ class onResponseHeadersReceived extends AbstractListener
             )
                 $transporter->close();
 
+            ## do not continue with body
             return ['continue' => false];
         }
 
