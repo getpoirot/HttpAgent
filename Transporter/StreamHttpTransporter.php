@@ -10,6 +10,7 @@ use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\Http\Psr\Interfaces\RequestInterface;
+use Poirot\HttpAgent\Transporter\Listeners\onEventsCloseConnection;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseBodyReceived;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseHeadersReceived;
 use Poirot\Stream\Streamable;
@@ -375,6 +376,14 @@ class StreamHttpTransporter extends AbstractConnection
             TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED
             , new onResponseBodyReceived
             , 100
+        );
+
+        $this->event()->on([
+                TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED,
+                TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED,
+            ]
+            , new onEventsCloseConnection
+            , -1000
         );
     }
 }

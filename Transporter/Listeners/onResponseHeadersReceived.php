@@ -28,18 +28,8 @@ class onResponseHeadersReceived extends AbstractListener
             $transporter->reset();
 
         # HEAD requests and 204 or 304 stat codes are not expected to have a body
-        if ($statusCode == 304 || $statusCode == 204 || $request->getMethod() == HttpRequest::METHOD_HEAD) {
-            ## Close the connection if requested to do so by the server
-            $headers = $response->getHeaders();
-            if (
-                $headers->has('connection')
-                && strstr($headers->get('connection')->renderValueLine(), 'close') !== false
-            )
-                $transporter->close();
-
+        if ($statusCode == 304 || $statusCode == 204 || $request->getMethod() == HttpRequest::METHOD_HEAD)
             ## do not continue with body
             return ['continue' => false];
-        }
-
     }
 }
