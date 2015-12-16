@@ -1,10 +1,10 @@
 <?php
-namespace Poirot\HttpAgent\Transporter\Listeners;
+namespace Poirot\HttpAgent\Transporter;
 
 use Poirot\Core\AbstractOptions;
 use Poirot\Core\OpenOptions;
 
-class StreamHttpEventCollector extends OpenOptions
+class TransporterHttpEventCollector extends OpenOptions
 {
     protected $response;
     protected $transporter;

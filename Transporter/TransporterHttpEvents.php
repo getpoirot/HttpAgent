@@ -4,9 +4,8 @@ namespace Poirot\HttpAgent\Transporter;
 use Poirot\Events\BaseEvent;
 use Poirot\Events\BaseEvents;
 use Poirot\Events\EventBuilder;
-use Poirot\HttpAgent\Transporter\Listeners\StreamHttpEventCollector;
 
-class StreamHttpEvents extends BaseEvents
+class TransporterHttpEvents extends BaseEvents
 {
     const EVENT_RESPONSE_HEADERS_RECEIVED = 'response.head.receive';
     const EVENT_RESPONSE_BODY_RECEIVED    = 'response.body.receive';
@@ -24,7 +23,7 @@ class StreamHttpEvents extends BaseEvents
     {
         parent::__construct($setter);
 
-        $this->setCollector(new StreamHttpEventCollector);
+        $this->setCollector(new TransporterHttpEventCollector);
 
         // attach default event names:
         ## also share this collector into them

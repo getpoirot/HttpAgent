@@ -55,7 +55,7 @@ class StreamHttpTransporter extends AbstractConnection
     /** @var HttpResponse */
     protected $_completed_response;
 
-    /** @var StreamHttpEvents */
+    /** @var TransporterHttpEvents */
     protected $event;
 
 
@@ -183,7 +183,7 @@ class StreamHttpTransporter extends AbstractConnection
             # receive response headers once request sent
             $headersStr = $this->receive()->read();
             $response   = new HttpResponse($headersStr);
-            $emitter = $this->event()->trigger(StreamHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, [
+            $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, [
                 'response'    => $response,
                 'transporter' => $this,
                 'request'     => $expr,
@@ -202,7 +202,7 @@ class StreamHttpTransporter extends AbstractConnection
             $bodyStream = $this->receive();
             ## subset stream to body part without headers, seek will always point to body
             $bodyStream = new Streamable\SegmentWrapStream($bodyStream, -1, $bodyStream->getCurrOffset());
-            $emitter = $this->event()->trigger(StreamHttpEvents::EVENT_RESPONSE_BODY_RECEIVED, [
+            $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED, [
                 'response'    => $response,
                 'transporter' => $this,
 
@@ -328,12 +328,12 @@ class StreamHttpTransporter extends AbstractConnection
     /**
      * Get Events
      *
-     * @return StreamHttpEvents
+     * @return TransporterHttpEvents
      */
     function event()
     {
         if (!$this->event)
-            $this->event = new StreamHttpEvents;
+            $this->event = new TransporterHttpEvents;
 
         return $this->event;
     }
@@ -366,13 +366,13 @@ class StreamHttpTransporter extends AbstractConnection
     protected function __attachDefaultListeners()
     {
         $this->event()->on(
-            StreamHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED
+            TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED
             , new onResponseHeadersReceived
             , 100
         );
 
         $this->event()->on(
-            StreamHttpEvents::EVENT_RESPONSE_BODY_RECEIVED
+            TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED
             , new onResponseBodyReceived
             , 100
         );
