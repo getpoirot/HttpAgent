@@ -5,11 +5,11 @@ use Poirot\ApiClient\AbstractConnection;
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Core\Interfaces\iDataSetConveyor;
-use Poirot\Events\Interfaces\Respec\iEventProvider;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\Http\Psr\Interfaces\RequestInterface;
+use Poirot\HttpAgent\Interfaces\iHttpTransporter;
 use Poirot\HttpAgent\Transporter\Listeners\onEventsCloseConnection;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseBodyReceived;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseHeadersReceived;
@@ -38,7 +38,7 @@ kd($response->toString());
 */
 
 class StreamHttpTransporter extends AbstractConnection
-    implements iEventProvider
+    implements iHttpTransporter
 {
     /** @var Streamable When Connected */
     protected $streamable;
