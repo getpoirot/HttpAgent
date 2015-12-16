@@ -4,6 +4,7 @@ namespace Poirot\HttpAgent\Transporter\Listeners;
 use Poirot\Events\Listener\AbstractListener;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpResponse;
+use Poirot\HttpAgent\Transporter\StreamFilter\ChunkTransferDecodeFilter;
 use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
 use Poirot\Stream\Filter\PhpRegisteredFilter;
 use Poirot\Stream\Interfaces\iStreamable;
@@ -25,13 +26,20 @@ class onResponseBodyReceived extends AbstractListener
         $headers = $response->getHeaders();
 
         if ($headers->has('Content-Encoding')
-            && strstr($headers->get('Content-Encoding')->renderValueLine(), 'gzip') !== false
+            && strstr(strtolower($headers->get('Content-Encoding')->renderValueLine()), 'gzip') !== false
         ) {
             ## Uses PHP's zlib.inflate filter to inflate deflate or gzipped content
 
             $body->getResource()->appendFilter(new PhpRegisteredFilter('zlib.inflate'), STREAM_FILTER_READ);
             ### skip the first 10 bytes for zlib
             $body = new Streamable\SegmentWrapStream($body, -1, 10);
+        }
+
+        if ($headers->has('transfer-encoding')
+            && strstr(strtolower($headers->get('Content-Encoding')->renderValueLine()), 'chunked') !== false
+        ) {
+            $body->getResource()->appendFilter(new ChunkTransferDecodeFilter, STREAM_FILTER_READ);
+
         }
 
         return ['body' => $body];
