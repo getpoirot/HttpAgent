@@ -21,7 +21,10 @@ class onEventsCloseConnection extends AbstractListener
             $headers->has('connection')
             && strstr($headers->get('connection')->renderValueLine(), 'close') !== false
             && $transporter->isConnected()
-        )
+        ) {
             $transporter->close();
+
+            return ['continue' => false];
+        }
     }
 }
