@@ -17,9 +17,6 @@ use Poirot\Stream\Streamable;
 use Poirot\Stream\StreamClient;
 
 /*
-$psrPath = new HttpUri('http://www.raya-media.com/');
-$path    = new \Poirot\PathUri\HttpUri($psrPath);
-
 $request = (new HttpRequest(['method' => 'GET', 'host' => 'raya-media.com', 'headers' => [
     'Accept' => '* /*',
     'User-Agent' => 'Poirot/Client HTTP',
@@ -28,7 +25,7 @@ $request = (new HttpRequest(['method' => 'GET', 'host' => 'raya-media.com', 'hea
 
 $stream = new StreamHttpTransporter(
     StreamHttpTransporter::optionsIns()
-        ->setServerUrl($path)
+        ->setServerUrl('http://www.raya-media.com/')
         ->setTimeout(30)
         ->setPersistent(true)
 );
@@ -184,11 +181,13 @@ class StreamHttpTransporter extends AbstractConnection
             # receive response headers once request sent
             $headersStr = $this->receive()->read();
             $response   = new HttpResponse($headersStr);
+
             $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, [
                 'response'    => $response,
                 'transporter' => $this,
                 'request'     => $expr,
             ]);
+
 
             if (!$emitter->collector()->getContinue())
                 return $response;
