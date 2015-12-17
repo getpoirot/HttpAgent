@@ -36,7 +36,7 @@ class onResponseBodyReceived extends AbstractListener
         }
 
         if ($headers->has('transfer-encoding')
-            && strstr(strtolower($headers->get('Content-Encoding')->renderValueLine()), 'chunked') !== false
+            && strstr(strtolower($headers->get('Transfer-Encoding')->renderValueLine()), 'chunked') !== false
         ) {
             $body->getResource()->appendFilter(new ChunkTransferDecodeFilter, STREAM_FILTER_READ);
 
