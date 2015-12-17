@@ -93,7 +93,7 @@ class StreamHttpTransporter extends AbstractConnection
 
         ## determine protocol
         // TODO ssl connection with context bind
-        $serverUrl = $this->options()->getServerUrl();
+        $serverUrl = clone $this->options()->getServerUrl();
         if (!$serverUrl)
             throw new \RuntimeException('Server Url is Mandatory For Connect.');
 
@@ -107,7 +107,18 @@ class StreamHttpTransporter extends AbstractConnection
         $streamClient->setPersistent($this->options()->getPersistent());
         $streamClient->setTimeout($this->options()->getTimeout());
 
-        $resource = $streamClient->getConnect();
+        try{
+            $resource = $streamClient->getConnect();
+        } catch(\Exception $e)
+        {
+            throw new \Exception(sprintf(
+                'Cannot connect to (%s).'
+                , $this->options()->getServerUrl()->toString()
+                , $e->getCode()
+                , $e ## as previous exception
+            ));
+        }
+
         $this->streamable = new Streamable($resource);
     }
 
