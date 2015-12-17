@@ -1,25 +1,22 @@
 <?php
 namespace Poirot\HttpAgent;
 
-use Poirot\ApiClient\Interfaces\iClient;
+use Poirot\ApiClient\AbstractClient;
 use Poirot\ApiClient\Interfaces\iConnection;
-use Poirot\ApiClient\Interfaces\Request\iApiMethod;
-use Poirot\ApiClient\Interfaces\Response\iResponse;
 use Poirot\Core\AbstractOptions;
 use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Http\Interfaces\iHeaderCollection;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
-use Poirot\Http\Psr\Interfaces\RequestInterface;
-use Poirot\HttpAgent\Connection\HAStreamConn;
+use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\Interfaces\iSeqPathUri;
 use Poirot\PathUri\Psr\UriInterface;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Psr\StreamInterface;
 
-class Browser implements iClient
+class Browser extends AbstractClient
 {
-    /** @var HAStreamConn|iConnection*/
+    /** @var StreamHttpTransporter|iConnection*/
     protected $connection;
     /** @var HttpPlatform */
     protected $platform;
@@ -55,12 +52,12 @@ class Browser implements iClient
     /**
      * Get Connection Adapter
      *
-     * @return HAStreamConn
+     * @return StreamHttpTransporter
      */
     function connection()
     {
         if (!$this->connection)
-            $this->connection = new HAStreamConn;
+            $this->connection = new StreamHttpTransporter;
 
         return $this->connection;
     }
@@ -108,43 +105,4 @@ class Browser implements iClient
     function TRACE($targetUri) {}
 
     function CONNECT($targetUri) {}
-
-    /**
-     * Send Request Object Via Connection
-     *
-     * ! if request object is null must using latest request method built
-     *
-     * @param iHttpRequest|RequestInterface|null $request
-     *
-     * @return iResponse
-     */
-    function send($request = null) {}
-
-    /**
-     * !! WE HAVE CUSTOM METHOD REQUESTS
-     *
-     * @inheritdoc
-     * @throws \RuntimeException
-     */
-    function call(iApiMethod $method)
-    {
-        throw new \RuntimeException(
-            'Direct call not available for generic Http Agent.'
-            .' using sendGET, sendPUT, sendPOST, ... Methods instead.'
-        );
-    }
-
-    protected function _f__call(iApiMethod $method)
-    {
-        $platform = $this->platform();
-
-        $expr     = $platform->makeExpression($method);
-        $result   = $this->connection()->exec($expr);
-
-        $response = $platform->makeResponse($result);
-        return $response;
-    }
-
-    // ...
-
 }
