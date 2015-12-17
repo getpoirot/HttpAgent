@@ -220,6 +220,7 @@ class StreamHttpTransporter extends AbstractConnection
                 'body'        => $bodyStream,
 
                 'request'     => $expr,
+                'continue'    => false, ## no more request by default
             ]);
 
             $bodyStream = $emitter->collector()->getBody();
