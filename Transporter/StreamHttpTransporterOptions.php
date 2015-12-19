@@ -12,6 +12,9 @@ class StreamHttpTransporterOptions extends AbstractOptions
     protected $timeout;
     protected $persistent;
 
+    /** @var bool Http Transporter Allowed To Decode Body Response */
+    protected $allowedDecoding = true;
+
     /**
      * Server Url That we Will Connect To
      * @param iHttpUri|UriInterface|string $serverUrl
@@ -77,5 +80,32 @@ class StreamHttpTransporterOptions extends AbstractOptions
     public function getPersistent()
     {
         return $this->persistent;
+    }
+
+
+    // ...
+
+    /**
+     * note: some times we need raw body from response
+     *       without any modification or filters added
+     *       it maybe used when we use StreamHttp as a
+     *       proxy or want to flush response directly
+     *       into output that handle decoding itself.
+     *
+     * @param boolean $allowedDecoding
+     * @return $this
+     */
+    public function setAllowedDecoding($allowedDecoding)
+    {
+        $this->allowedDecoding = $allowedDecoding;
+        return $this;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isAllowedDecoding()
+    {
+        return $this->allowedDecoding;
     }
 }

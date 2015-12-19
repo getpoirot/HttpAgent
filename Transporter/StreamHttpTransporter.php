@@ -75,8 +75,7 @@ class StreamHttpTransporter extends AbstractConnection
      *
      * - prepare resource with options
      *
-     * @throws ConnectException
-     * @return void
+     * @throws \Exception
      */
     function getConnect()
     {
