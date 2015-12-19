@@ -6,7 +6,7 @@ use Poirot\PathUri\HttpUri;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\Psr\UriInterface;
 
-class StreamHttpTransporterOptions extends AbstractOptions
+class HttpTransporterOptions extends AbstractOptions
 {
     protected $serverUrl;
     protected $timeout;
