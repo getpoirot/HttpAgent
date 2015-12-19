@@ -29,11 +29,24 @@ class Browser extends AbstractClient
     /**
      * Construct
      *
-     * @param BrowserOptions|iDataSetConveyor|null $options
+     * - construct('http://google.com', ['connection' => ['time_out' => 20]]);
+     * - construct([
+     *    'base_url'    => 'http://google.com'
+     *    'connection'  => ['time_out' => 20]
+     * ]);
+     *
+     * @param BrowserOptions|iDataSetConveyor|null|string $baseUrlOrOptions
+     * @param array|null                                  $ops     Options when using as base_url
      */
-    function __construct($options = null)
+    function __construct($baseUrlOrOptions = null, $ops = null)
     {
+        if ($baseUrlOrOptions !== null && is_string($baseUrlOrOptions))
+            $this->inOptions()->setBaseUrl($baseUrlOrOptions);
+        elseif ($baseUrlOrOptions !== null)
+            $ops = $baseUrlOrOptions;
 
+        if ($ops !== null)
+            $this->inOptions()->from($ops);
     }
 
     /**
@@ -113,7 +126,7 @@ class Browser extends AbstractClient
     // ...
 
     /**
-     * @return AbstractOptions
+     * @return BrowserOptions
      */
     function inOptions()
     {
@@ -135,7 +148,7 @@ class Browser extends AbstractClient
      *      $class = new Filesystem($opt);
      *   [/php]
      *
-     * @return AbstractOptions
+     * @return BrowserOptions
      */
     static function newOptions()
     {
