@@ -61,11 +61,11 @@ interface iHttpTransporter
      * @override just for ide completion
      * @return StreamHttpTransporterOptions
      */
-    function options();
+    function inOptions();
 
     /**
      * @override
      * @return StreamHttpTransporterOptions
      */
-    static function optionsIns();
+    static function newOptions();
 }

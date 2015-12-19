@@ -88,12 +88,14 @@ class StreamHttpTransporter extends AbstractConnection
 
         # apply options to resource
         ## options will not take an affect after connect
-        $this->connected_options = clone $this->options();
+        $this->connected_options = clone $this->inOptions();
 
         ## determine protocol
         // TODO ssl connection with context bind
-        $serverUrl = clone $this->options()->getServerUrl();
-        if (!$serverUrl)
+        if (
+            !$this->inOptions()->__isset('server_url')
+            || ! ($serverUrl = clone $this->inOptions()->getServerUrl())
+        )
             throw new \RuntimeException('Server Url is Mandatory For Connect.');
 
         $serverUrl->setScheme('tcp');
@@ -103,8 +105,8 @@ class StreamHttpTransporter extends AbstractConnection
         $streamClient->setSocketUri($serverUrl->toString());
 
         ### options
-        $streamClient->setPersistent($this->options()->getPersistent());
-        $streamClient->setTimeout($this->options()->getTimeout());
+        $streamClient->setPersistent($this->inOptions()->getPersistent());
+        $streamClient->setTimeout($this->inOptions()->getTimeout());
 
         try{
             $resource = $streamClient->getConnect();
@@ -112,7 +114,7 @@ class StreamHttpTransporter extends AbstractConnection
         {
             throw new \Exception(sprintf(
                 'Cannot connect to (%s).'
-                , $this->options()->getServerUrl()->toString()
+                , $this->inOptions()->getServerUrl()->toString()
                 , $e->getCode()
                 , $e ## as previous exception
             ));
@@ -136,6 +138,7 @@ class StreamHttpTransporter extends AbstractConnection
     {
         # prepare new request
         $this->isRequestComplete = false;
+
         ## destruct buffer
         $this->_getBufferStream()->getResource()->close();
         $this->_buffer = null;
@@ -355,20 +358,20 @@ class StreamHttpTransporter extends AbstractConnection
      * @override just for ide completion
      * @return StreamHttpTransporterOptions
      */
-    function options()
+    function inOptions()
     {
         if ($this->isConnected())
             ## the options will not changed when connected
             return $this->connected_options;
 
-        return parent::options();
+        return parent::inOptions();
     }
 
     /**
      * @override
      * @return StreamHttpTransporterOptions
      */
-    static function optionsIns()
+    static function newOptions()
     {
         return new StreamHttpTransporterOptions;
     }

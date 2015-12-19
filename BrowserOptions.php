@@ -86,7 +86,7 @@ class BrowserOptions extends OpenOptions
     }
 
     /**
-     * @return array|iDataSetConveyor|StreamHttpTransporterOptions
+     * @return null|array|iDataSetConveyor|StreamHttpTransporterOptions
      */
     public function getConnection()
     {

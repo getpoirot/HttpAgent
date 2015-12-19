@@ -5,6 +5,7 @@ use Poirot\ApiClient\AbstractClient;
 use Poirot\ApiClient\Interfaces\iConnection;
 use Poirot\Core\AbstractOptions;
 use Poirot\Core\Interfaces\iDataSetConveyor;
+use Poirot\Core\Interfaces\iOptionsProvider;
 use Poirot\Http\Interfaces\iHeaderCollection;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
@@ -15,11 +16,13 @@ use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Psr\StreamInterface;
 
 class Browser extends AbstractClient
+    implements iOptionsProvider
 {
     /** @var StreamHttpTransporter|iConnection*/
     protected $connection;
     /** @var HttpPlatform */
     protected $platform;
+
     /** @var BrowserOptions */
     protected $options;
 
@@ -44,7 +47,7 @@ class Browser extends AbstractClient
     function platform()
     {
         if (!$this->platform)
-            $this->platform = new HttpPlatform;
+            $this->platform = new HttpPlatform($this);
 
         return $this->platform;
     }
@@ -72,37 +75,70 @@ class Browser extends AbstractClient
      *
      * - create method build from platform, platform will build request object from that
      *
-     * @param string|iHttpUri|UriInterface $targetUri Relative Uri that merged into base url
+     * @param string|iHttpUri|UriInterface $uri Relative Uri that merged into base url
      *
      * @return iHttpRequest
      */
-    function OPTIONS($targetUri) {}
+    function OPTIONS($uri) {}
 
     /**
-     * @param string|iSeqPathUri|iHttpUri|UriInterface $targetUri
+     * @param string|iSeqPathUri|iHttpUri|UriInterface $uri
      * @param array|iHeaderCollection|null             $headers
      * @param array|iDataSetConveyor|null              $options
      */
-    function GET($targetUri, $headers = null, $options = null) {}
+    function GET($uri, $headers = null, $options = null) {}
 
-    function HEAD($targetUri, $headers = null, $options = null) {}
+    function HEAD($uri, $headers = null, $options = null) {}
 
     /**
-     * @param string|iSeqPathUri|iHttpUri|UriInterface         $targetUri
+     * @param string|iSeqPathUri|iHttpUri|UriInterface         $uri
      * @param string|iStreamable|StreamInterface|resource|null $body
      * @param array|iHeaderCollection|null                     $headers
      * @param array|BrowserOptions|iDataSetConveyor|null       $options
      *                                                         Agent Options To Merge With Default Agent Options
      */
-    function PATCH($targetUri, $body = null, $headers = null, $options = null) {}
+    function PATCH($uri, $body = null, $headers = null, $options = null) {}
 
-    function POST($targetUri, $body = null, $headers = null, $options = null) {}
+    function POST($uri, $body = null, $headers = null, $options = null) {}
 
-    function PUT($targetUri, $body = null, $headers = null, $options = null) {}
+    function PUT($uri, $body = null, $headers = null, $options = null) {}
 
-    function DELETE($targetUri, $body = null, $headers = null, $options = null) {}
+    function DELETE($uri, $body = null, $headers = null, $options = null) {}
 
-    function TRACE($targetUri) {}
+    function TRACE($uri) {}
 
-    function CONNECT($targetUri) {}
+    function CONNECT($uri) {}
+
+
+    // ...
+
+    /**
+     * @return AbstractOptions
+     */
+    function inOptions()
+    {
+        if (!$this->options)
+            $this->options = self::newOptions();
+
+        return $this->options;
+    }
+
+    /**
+     * Get An Bare Options Instance
+     *
+     * ! it used on easy access to options instance
+     *   before constructing class
+     *   [php]
+     *      $opt = Filesystem::optionsIns();
+     *      $opt->setSomeOption('value');
+     *
+     *      $class = new Filesystem($opt);
+     *   [/php]
+     *
+     * @return AbstractOptions
+     */
+    static function newOptions()
+    {
+        return new BrowserOptions;
+    }
 }
