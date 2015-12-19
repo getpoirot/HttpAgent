@@ -183,6 +183,7 @@ class StreamHttpTransporter extends AbstractConnection
      *
      * @param iHttpRequest $expr
      * @return HttpResponse
+     * @throws \Exception
      */
         protected function __handleRequest(iHttpRequest $expr)
         {
@@ -194,6 +195,8 @@ class StreamHttpTransporter extends AbstractConnection
 
             # receive response headers once request sent
             $headersStr = $this->receive()->read();
+            if (!$headersStr)
+                throw new \Exception('Server not respond to this request.');
             $response   = new HttpResponse($headersStr);
 
             $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, [
