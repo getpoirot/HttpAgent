@@ -95,7 +95,7 @@ class HttpTransporterOptions extends AbstractOptions
      * @param boolean $allowedDecoding
      * @return $this
      */
-    public function setAllowedDecoding($allowedDecoding)
+    public function setAllowDecoding($allowedDecoding)
     {
         $this->allowedDecoding = $allowedDecoding;
         return $this;
@@ -104,7 +104,7 @@ class HttpTransporterOptions extends AbstractOptions
     /**
      * @return boolean
      */
-    public function isAllowedDecoding()
+    public function isAllowDecoding()
     {
         return $this->allowedDecoding;
     }

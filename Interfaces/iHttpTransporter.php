@@ -7,7 +7,7 @@ use Poirot\Events\Interfaces\Respec\iEventProvider;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\Http\Psr\Interfaces\RequestInterface;
-use Poirot\HttpAgent\Transporter\StreamHttpTransporterOptions;
+use Poirot\HttpAgent\Transporter\HttpTransporterOptions;
 use Poirot\HttpAgent\Transporter\TransporterHttpEvents;
 
 interface iHttpTransporter
@@ -19,6 +19,7 @@ interface iHttpTransporter
      *
      * - send expression to server through connection
      *   resource
+     * - get connect if connection not stablished yet
      *
      * @param iHttpRequest|RequestInterface|string $expr Expression
      *
@@ -59,13 +60,13 @@ interface iHttpTransporter
 
     /**
      * @override just for ide completion
-     * @return StreamHttpTransporterOptions
+     * @return HttpTransporterOptions
      */
     function inOptions();
 
     /**
      * @override
-     * @return StreamHttpTransporterOptions
+     * @return HttpTransporterOptions
      */
     static function newOptions();
 }

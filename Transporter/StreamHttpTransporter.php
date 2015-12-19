@@ -128,6 +128,7 @@ class StreamHttpTransporter extends AbstractConnection
      *
      * - send expression to server through connection
      *   resource
+     * - get connect if connection not stablished yet
      *
      * @param iHttpRequest|RequestInterface|string $expr Expression
      *
@@ -356,7 +357,7 @@ class StreamHttpTransporter extends AbstractConnection
 
     /**
      * @override just for ide completion
-     * @return StreamHttpTransporterOptions
+     * @return HttpTransporterOptions
      */
     function inOptions()
     {
@@ -369,11 +370,11 @@ class StreamHttpTransporter extends AbstractConnection
 
     /**
      * @override
-     * @return StreamHttpTransporterOptions
+     * @return HttpTransporterOptions
      */
     static function newOptions()
     {
-        return new StreamHttpTransporterOptions;
+        return new HttpTransporterOptions;
     }
 
 
