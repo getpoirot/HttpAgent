@@ -204,9 +204,11 @@ class StreamHttpTransporter extends AbstractConnection
 
             # send request body
             $body = $expr->getBody();
-            if (is_string($body))
-                $body = new Streamable\TemporaryStream($body);
-            $body->pipeTo($stream);
+            if ($body !== null) {
+                if (is_string($body))
+                    $body = new Streamable\TemporaryStream($body);
+                $body->pipeTo($stream);
+            }
 
             # receive rest response body
             $bodyStream = $this->receive();
