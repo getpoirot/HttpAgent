@@ -9,8 +9,9 @@ use Poirot\PathUri\Psr\UriInterface;
 class HttpTransporterOptions extends AbstractOptions
 {
     protected $serverUrl;
-    protected $timeout;
-    protected $persistent;
+
+    protected $timeout    = 20;
+    protected $persistent = false;
 
     /** @var bool Http Transporter Allowed To Decode Body Response */
     protected $allowedDecoding = true;

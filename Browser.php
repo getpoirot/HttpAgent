@@ -3,12 +3,14 @@ namespace Poirot\HttpAgent;
 
 use Poirot\ApiClient\AbstractClient;
 use Poirot\ApiClient\Interfaces\iConnection;
+use Poirot\ApiClient\Interfaces\Request\iApiMethod;
 use Poirot\Core\AbstractOptions;
 use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Core\Interfaces\iOptionsProvider;
 use Poirot\Http\Interfaces\iHeaderCollection;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\HttpAgent\Browser\HttpPlatform;
+use Poirot\HttpAgent\Browser\ResponsePlatform;
 use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\Interfaces\iSeqPathUri;
@@ -155,4 +157,18 @@ class Browser extends AbstractClient
     {
         return new BrowserOptions;
     }
+
+
+    // ...
+
+    /**
+     * @override Ide Completion
+     * @param iApiMethod $method
+     * @return ResponsePlatform
+     */
+    function call(iApiMethod $method)
+    {
+        return parent::call($method);
+    }
+
 }

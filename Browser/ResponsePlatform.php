@@ -5,6 +5,7 @@ use Poirot\ApiClient\Response;
 use Poirot\Http\Interfaces\iHeader;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\Http\Plugins\Response\Status as ResposeStatusPlugin;
+use Poirot\Stream\Interfaces\iStreamable;
 
 class ResponsePlatform extends Response
 {
@@ -28,10 +29,13 @@ class ResponsePlatform extends Response
             $this->setException(new \RuntimeException($response->getStatReason(), $response->getStatCode()));
     }
 
+
+    // ...
+
     /**
      * Set Response Origin Content
      *
-     * @param string $content Content Body
+     * @param iStreamable|string $content Content Body
      *
      * @return $this
      */
@@ -44,10 +48,23 @@ class ResponsePlatform extends Response
     /**
      * Get Response Origin Body Content
      *
-     * @return string
+     * @return iStreamable|string
      */
     function getRawBody()
     {
         return $this->origin->getBody();
+    }
+
+
+    // ...
+
+    /**
+     * @override ide completion
+     * @param callable|null $proc
+     * @return HttpResponse
+     */
+    function getResult(callable $proc = null)
+    {
+        return parent::getResult($proc);
     }
 }
