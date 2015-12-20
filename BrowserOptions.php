@@ -19,7 +19,6 @@ class BrowserOptions extends OpenOptions
 
     # default element options
     protected $connection;
-    protected $request;
 
     protected $userAgent;
 
