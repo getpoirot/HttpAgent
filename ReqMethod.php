@@ -181,6 +181,12 @@ class ReqMethod extends Method
      */
     public function setBrowser($browser)
     {
+        if (!$browser instanceof BrowserOptions)
+            $browser = new BrowserOptions($browser);
+
+        if (!$browser instanceof BrowserOptions)
+            throw new \InvalidArgumentException;
+
         $this->browser = $browser;
         return $this;
     }

@@ -171,4 +171,14 @@ class Browser extends AbstractClient
         return parent::call($method);
     }
 
+    /**
+     * @override Ide Completion
+     * @param string $methodName
+     * @param array  $args
+     * @return ResponsePlatform
+     */
+    function __call($methodName, $args)
+    {
+        return parent::__call($methodName, $args);
+    }
 }
