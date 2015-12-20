@@ -1,19 +1,25 @@
 <?php
-namespace Poirot\HttpAgent;
+namespace Poirot\HttpAgent\Browser;
 
 use Poirot\ApiClient\Interfaces\iConnection;
 use Poirot\ApiClient\Interfaces\iPlatform;
 use Poirot\ApiClient\Interfaces\Request\iApiMethod;
 use Poirot\ApiClient\Interfaces\Response\iResponse;
+use Poirot\Http\Header\HeaderFactory;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
+use Poirot\HttpAgent\Browser;
 use Poirot\HttpAgent\Interfaces\iHttpTransporter;
 use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
+use Poirot\PathUri\Interfaces\iHttpUri;
+use Poirot\PathUri\SeqPathJoinUri;
 
 class HttpPlatform implements iPlatform
 {
     /** @var Browser */
     protected $browser;
+    /** @var iHttpTransporter */
+    protected $_connection;
 
     /**
      * Construct
@@ -22,7 +28,7 @@ class HttpPlatform implements iPlatform
      */
     function __construct(Browser $browser)
     {
-       $this->browser = $browser;
+       $this->browser = clone $browser;
     }
 
     /**
@@ -57,9 +63,14 @@ class HttpPlatform implements iPlatform
             }
 
         # base url as connection server_url option
-        $baseUrl = $this->browser->inOptions()->getBaseUrl();
-        if ($baseUrl->toString() !== $connection->inOptions()->getServerUrl()) {
-            $connection->inOptions()->setServerUrl($baseUrl);
+        // http://raya-media/path/to/uri --> http://raya-media/
+        $absServerUrl = clone $this->browser->inOptions()->getBaseUrl();
+        ## made absolute server url from given baseUrl
+        if ($absServerUrl->getPath())
+            $absServerUrl->getPath()->reset();
+
+        if ($absServerUrl->toString() !== $connection->inOptions()->getServerUrl()) {
+            $connection->inOptions()->setServerUrl($absServerUrl);
             $reConnect = true;
         }
 
@@ -68,6 +79,7 @@ class HttpPlatform implements iPlatform
         if ($connection->isConnected() && $reConnect)
             $connection->close();
 
+        $this->_connection = $connection; ## used on make expression/response
         return $connection;
     }
 
@@ -81,7 +93,53 @@ class HttpPlatform implements iPlatform
      */
     function makeExpression(iApiMethod $method)
     {
-        $request = (new HttpRequest(['method' => 'GET', 'host' => 'raya-media.com']));
+        $args = $method->getArguments();
+
+        ## req Uri
+        if ($args['uri'] instanceof iHttpUri) {
+            ### reset server_url
+            $this->browser->inOptions()->setBaseUrl($args['uri']);
+            $this->prepareConnection($this->_connection);
+
+            ### continue with sequence http uri
+            $args['uri'] = ($args['uri']->getPath()) ? $args['uri']->getPath() : new SeqPathJoinUri('/');
+        }
+
+        // ...
+
+        # Build Request:
+        $request = new HttpRequest;
+        $request->setMethod($args['method']);
+        $request->setHost($this->_connection->inOptions()->getServerUrl()->getHost());
+
+        ## req Headers
+        ### default headers
+        $reqHeaders = $request->getHeaders();
+        $reqHeaders->set(HeaderFactory::factory('User-Agent'
+            , $this->browser->inOptions()->getUserAgent()
+        ));
+        $reqHeaders->set(HeaderFactory::factory('Accept'
+            , 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+        ));
+        (!$this->browser->inOptions()->getConnection()->isAllowDecoding())
+            ?: $reqHeaders->set(HeaderFactory::factory('Accept-Encoding'
+            , 'gzip, deflate, sdch'
+        ));
+        ### headers as request method options
+        if (is_array($args['headers']))
+            foreach($args['headers'] as $h)
+                $reqHeaders->set($h);
+
+        ## req Uri
+        $baseUrl   = $this->browser->inOptions()->getBaseUrl()->getPath();
+        if (!$baseUrl)
+            $baseUrl = new SeqPathJoinUri('/');
+        $targetUri = $baseUrl->merge($args['uri']);
+
+        $request->setUri($targetUri);
+
+        ## req body
+        $request->setBody($args['body']);
 
         return $request;
     }
@@ -99,7 +157,6 @@ class HttpPlatform implements iPlatform
      */
     function makeResponse($result)
     {
-        $result->flush();
-        die();
+        return new ResponsePlatform($result);
     }
 }

@@ -8,6 +8,7 @@ use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Core\Interfaces\iOptionsProvider;
 use Poirot\Http\Interfaces\iHeaderCollection;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
+use Poirot\HttpAgent\Browser\HttpPlatform;
 use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\Interfaces\iSeqPathUri;
