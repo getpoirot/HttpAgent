@@ -2,6 +2,7 @@
 namespace Poirot\HttpAgent;
 
 use Poirot\ApiClient\Request\Method;
+use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Core\Traits\OptionsTrait;
 use Poirot\Http\Headers;
 use Poirot\Http\Interfaces\iHeaderCollection;
@@ -16,11 +17,15 @@ class ReqMethod extends Method
     use OptionsTrait;
 
     protected $method = 'GET';
+    /** @var iHttpUri|iSeqPathUri Request Target Uri */
     protected $uri;
+    /** @var iHeaderCollection|Headers */
     protected $headers;
+    /** @var iStreamable|string|null */
     protected $body;
 
-    protected $options;
+    /** @var BrowserOptions Browser Specific Options */
+    protected $browser;
 
     /**
      * Construct
@@ -169,20 +174,22 @@ class ReqMethod extends Method
         return $this->body;
     }
 
-
     /**
-     * @return mixed
+     * Set Browser Specific Options
+     * @param array|iDataSetConveyor|BrowserOptions $browser
+     * @return $this
      */
-    public function getOptions()
+    public function setBrowser($browser)
     {
-        return $this->options;
+        $this->browser = $browser;
+        return $this;
     }
 
     /**
-     * @param mixed $options
+     * @return BrowserOptions
      */
-    public function setOptions($options)
+    public function getBrowser()
     {
-        $this->options = $options;
+        return $this->browser;
     }
 }
