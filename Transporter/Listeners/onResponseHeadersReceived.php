@@ -33,9 +33,9 @@ class onResponseHeadersReceived extends AbstractListener
             ## do not continue with body
             return ['continue' => false];
 
-        $statusPlugin = new Status(['message_object' => $response]);
+        /*$statusPlugin = new Status(['message_object' => $response]);
         if (!$statusPlugin->isSuccess())
             ## always connection will closed, no need to continue
-            return ['continue' => false];
+            return ['continue' => false];*/
     }
 }
