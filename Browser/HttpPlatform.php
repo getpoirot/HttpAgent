@@ -10,6 +10,7 @@ use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\HttpAgent\Browser;
 use Poirot\HttpAgent\Interfaces\iHttpTransporter;
+use Poirot\HttpAgent\ReqMethod;
 use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\SeqPathJoinUri;
@@ -28,7 +29,7 @@ class HttpPlatform implements iPlatform
      */
     function __construct(Browser $browser)
     {
-       $this->browser = clone $browser;
+        $this->browser = $browser;
     }
 
     /**
@@ -43,19 +44,22 @@ class HttpPlatform implements iPlatform
      * @throws \Exception
      * @return StreamHttpTransporter|iHttpTransporter
      */
-    function prepareConnection(iConnection $connection)
+    function prepareConnection(iConnection $connection, $debug = false)
     {
-        $brwOptions = $this->browser->inOptions();
+        # each time Connection can manipulated with Platform
+        $connection = clone $connection;
+
+        $BROWSER_OPTS = $this->browser->inOptions();
 
         $reConnect = false;
 
         # check if we have something changed in connection options
-        if ($conOptions = $brwOptions->getConnection())
+        if ($conOptions = $BROWSER_OPTS->getConnection())
             foreach($conOptions->props()->readable as $prop) {
                 if (
                     ## not has new option or it may changed
                     !$connection->inOptions()->__isset($prop)
-                    || ($connection->inOptions()->__get($prop) !== $conOptions->__get($prop))
+                    || ($connection->inOptions()->__get($prop) !== ($val = $conOptions->__get($prop))) && $val !== null
                 ) {
                     $connection->inOptions()->__set($prop, $conOptions->__get($prop));
                     $reConnect = true;
@@ -65,7 +69,7 @@ class HttpPlatform implements iPlatform
         # base url as connection server_url option
         // http://raya-media/path/to/uri --> http://raya-media/
         $absServerUrl = clone $this->browser->inOptions()->getBaseUrl();
-        ## made absolute server url from given baseUrl
+        ## made absolute server url from given baseUrl, but keep original untouched
         if ($absServerUrl->getPath())
             $absServerUrl->getPath()->reset();
 
@@ -87,13 +91,33 @@ class HttpPlatform implements iPlatform
      * Build Platform Specific Expression To Send
      * Trough Connection
      *
-     * @param iApiMethod $method Method Interface
+     * @param iApiMethod|ReqMethod $method Method Interface
      *
      * @return HttpRequest
      */
     function makeExpression(iApiMethod $method)
     {
+        ## make a copy of browser when making changes on it by ReqMethod
+        ### with bind browser options
+        $CUR_BROWSER = $this->browser;
+        $this->browser = clone $CUR_BROWSER;
+
+
         $args = $method->getArguments();
+
+        if ($args['browser']) {
+            ### Browser specific options
+            $prepConn = false;
+            foreach($args['browser']->props()->readable as $prop) {
+                if ($val = $args['browser']->__get($prop)) {
+                    $this->browser->inOptions()->__set($prop, $val);
+                    $prepConn = true;
+                }
+            }
+
+            ## prepare connection again with new configs
+            (!$prepConn) ?: $this->prepareConnection($this->_connection, true);
+        }
 
         ## req Uri
         if ($args['uri'] instanceof iHttpUri) {
@@ -109,10 +133,11 @@ class HttpPlatform implements iPlatform
 
         # Build Request:
         $request = new HttpRequest;
+
         $request->setMethod($args['method']);
         $request->setHost($this->_connection->inOptions()->getServerUrl()->getHost());
 
-        ## req Headers
+        ## req Headers ------------------------------------------------------------------\
         ### default headers
         $reqHeaders = $request->getHeaders();
         $reqHeaders->set(HeaderFactory::factory('User-Agent'
@@ -121,16 +146,19 @@ class HttpPlatform implements iPlatform
         $reqHeaders->set(HeaderFactory::factory('Accept'
             , 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
         ));
-        (!$this->browser->inOptions()->getConnection()->isAllowDecoding())
-            ?: $reqHeaders->set(HeaderFactory::factory('Accept-Encoding'
-            , 'gzip, deflate, sdch'
-        ));
+
+        if ($this->browser->inOptions()->getConnection())
+            (!$this->browser->inOptions()->getConnection()->isAllowDecoding())
+                ?: $reqHeaders->set(HeaderFactory::factory('Accept-Encoding'
+                , 'gzip, deflate, sdch'
+            ));
+
         ### headers as request method options
         if (is_array($args['headers']))
             foreach($args['headers'] as $h)
                 $reqHeaders->set($h);
 
-        ## req Uri
+        ## req Uri ----------------------------------------------------------------------\
         $baseUrl   = $this->browser->inOptions()->getBaseUrl()->getPath();
         if (!$baseUrl)
             $baseUrl = new SeqPathJoinUri('/');
@@ -138,9 +166,11 @@ class HttpPlatform implements iPlatform
 
         $request->setUri($targetUri);
 
-        ## req body
+        ## req body ---------------------------------------------------------------------\
         $request->setBody($args['body']);
 
+
+        $this->browser = $CUR_BROWSER;
         return $request;
     }
 

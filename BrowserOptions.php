@@ -4,6 +4,7 @@ namespace Poirot\HttpAgent;
 use Poirot\Core\AbstractOptions;
 use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Core\OpenOptions;
+use Poirot\Core\Traits\CloneTrait;
 use Poirot\HttpAgent\Transporter\HttpTransporterOptions;
 use Poirot\PathUri\HttpUri;
 use Poirot\PathUri\Interfaces\iHttpUri;
@@ -14,6 +15,8 @@ use Poirot\PathUri\Psr\UriInterface;
  */
 class BrowserOptions extends OpenOptions
 {
+    use CloneTrait;
+
     /** @var string|iHttpUri|UriInterface Base Url to Server */
     protected $baseUrl;
 
@@ -90,10 +93,18 @@ class BrowserOptions extends OpenOptions
      */
     public function setConnection($connection)
     {
+        /** ALWAYS KEEP LAST VALUES AND NOT REPLACE WHOLE */
+
+        $tConnection = ($this->connection) ? $this->connection : new HttpTransporterOptions;
+
         if (!$connection instanceof HttpTransporterOptions && $connection !== null)
             $connection = new HttpTransporterOptions($connection);
 
-        $this->connection = $connection;
+        foreach($connection->props()->readable as $prop)
+            if (($val = $connection->__get($prop)) !== null)
+                $tConnection->__set($prop, $val);
+
+        $this->connection = $tConnection;
         return $this;
     }
 

@@ -7,6 +7,7 @@ use Poirot\ApiClient\Interfaces\Request\iApiMethod;
 use Poirot\Core\AbstractOptions;
 use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Core\Interfaces\iOptionsProvider;
+use Poirot\Core\Traits\CloneTrait;
 use Poirot\Http\Interfaces\iHeaderCollection;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\HttpAgent\Browser\HttpPlatform;
@@ -21,6 +22,8 @@ use Poirot\Stream\Psr\StreamInterface;
 class Browser extends AbstractClient
     implements iOptionsProvider
 {
+    use CloneTrait;
+
     /** @var StreamHttpTransporter|iConnection*/
     protected $connection;
     /** @var HttpPlatform */
@@ -134,7 +137,7 @@ class Browser extends AbstractClient
     function inOptions()
     {
         if (!$this->options)
-            $this->options = self::newOptions();
+            $this->options = static::newOptions();
 
         return $this->options;
     }
@@ -168,7 +171,9 @@ class Browser extends AbstractClient
      */
     function call(iApiMethod $method)
     {
-        return parent::call($method);
+        $return = parent::call($method);
+        $this->connection()->close();
+        return $return;
     }
 
     /**
@@ -181,4 +186,5 @@ class Browser extends AbstractClient
     {
         return parent::__call($methodName, $args);
     }
+
 }

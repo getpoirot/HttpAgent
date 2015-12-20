@@ -105,7 +105,7 @@ class StreamHttpTransporter extends AbstractConnection
         $streamClient->setSocketUri($serverUrl->toString());
 
         ### options
-        $streamClient->setPersistent($this->inOptions()->getPersistent());
+        $streamClient->setPersistent($this->inOptions()->getPersist());
         $streamClient->setTimeout($this->inOptions()->getTimeout());
 
         try{

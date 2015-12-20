@@ -2,16 +2,19 @@
 namespace Poirot\HttpAgent\Transporter;
 
 use Poirot\Core\AbstractOptions;
+use Poirot\Core\Traits\CloneTrait;
 use Poirot\PathUri\HttpUri;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\Psr\UriInterface;
 
 class HttpTransporterOptions extends AbstractOptions
 {
+    use CloneTrait;
+
     protected $serverUrl;
 
-    protected $timeout    = 20;
-    protected $persistent = false;
+    protected $timeout = 20;
+    protected $persist = false;
 
     /** @var bool Http Transporter Allowed To Decode Body Response */
     protected $allowedDecoding = true;
@@ -66,21 +69,21 @@ class HttpTransporterOptions extends AbstractOptions
     }
 
     /**
-     * @param mixed $persistent
+     * @param mixed $persist
      * @return $this
      */
-    public function setPersistent($persistent)
+    public function setPersist($persist)
     {
-        $this->persistent = (bool) $persistent;
+        $this->persist = (bool) $persist;
         return $this;
     }
 
     /**
      * @return mixed
      */
-    public function getPersistent()
+    public function getPersist()
     {
-        return $this->persistent;
+        return $this->persist;
     }
 
 
