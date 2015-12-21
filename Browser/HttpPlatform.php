@@ -88,25 +88,25 @@ class HttpPlatform implements iPlatform
      * Build Platform Specific Expression To Send
      * Trough Connection
      *
-     * @param iApiMethod|ReqMethod $method Method Interface
+     * @param iApiMethod|ReqMethod $ReqMethod Method Interface
      *
      * @return HttpRequest
      */
-    function makeExpression(iApiMethod $method)
+    function makeExpression(iApiMethod $ReqMethod)
     {
         ## make a copy of browser when making changes on it by ReqMethod
         ### with bind browser options
         $CUR_BROWSER = $this->browser;
         $this->browser = clone $CUR_BROWSER;
 
-        if (!$method instanceof ReqMethod)
-            $method = new ReqMethod($method->toArray());
+        if (!$ReqMethod instanceof ReqMethod)
+            $ReqMethod = new ReqMethod($ReqMethod->toArray());
 
-        if ($method->getBrowser()) {
+        if ($ReqMethod->getBrowser()) {
             ### Browser specific options
             $prepConn = false;
-            foreach($method->getBrowser()->props()->readable as $prop) {
-                if ($val = $method->getBrowser()->__get($prop)) {
+            foreach($ReqMethod->getBrowser()->props()->readable as $prop) {
+                if ($val = $ReqMethod->getBrowser()->__get($prop)) {
                     $this->browser->inOptions()->__set($prop, $val);
                     $prepConn = true;
                 }
@@ -117,30 +117,30 @@ class HttpPlatform implements iPlatform
         }
 
         ## req Uri
-        if ($method->getUri() instanceof iHttpUri) {
+        if ($ReqMethod->getUri() instanceof iHttpUri) {
             ### reset server_url
-            $this->browser->inOptions()->setBaseUrl($method->getUri());
+            $this->browser->inOptions()->setBaseUrl($ReqMethod->getUri());
             $this->prepareConnection($this->_connection);
 
             ### continue with sequence http uri
-            $t_uri = ($method->getUri()->getPath())
-                ? $method->getUri()->getPath()
+            $t_uri = ($ReqMethod->getUri()->getPath())
+                ? $ReqMethod->getUri()->getPath()
                 : new SeqPathJoinUri('/');
 
-            $method->setUri($t_uri);
+            $ReqMethod->setUri($t_uri);
         }
 
         // ...
 
         # Build Request:
-        $request = new HttpRequest;
+        $REQUEST = $this->__getRequestObject();
 
-        $request->setMethod($method->getMethod());
-        $request->setHost($this->_connection->inOptions()->getServerUrl()->getHost());
+        $REQUEST->setMethod($ReqMethod->getMethod());
+        $REQUEST->setHost($this->_connection->inOptions()->getServerUrl()->getHost());
 
         ## req Headers ------------------------------------------------------------------\
         ### default headers
-        $reqHeaders = $request->getHeaders();
+        $reqHeaders = $REQUEST->getHeaders();
         $reqHeaders->set(HeaderFactory::factory('User-Agent'
             , $this->browser->inOptions()->getUserAgent()
         ));
@@ -155,8 +155,8 @@ class HttpPlatform implements iPlatform
             ));
 
         ### headers as request method options
-        if ($method->getHeaders()) {
-            foreach($method->getHeaders() as $h)
+        if ($ReqMethod->getHeaders()) {
+            foreach($ReqMethod->getHeaders() as $h)
                 $reqHeaders->set($h);
         }
 
@@ -164,15 +164,16 @@ class HttpPlatform implements iPlatform
         $baseUrl   = $this->browser->inOptions()->getBaseUrl()->getPath();
         if (!$baseUrl)
             $baseUrl = new SeqPathJoinUri('/');
-        $targetUri = $baseUrl->merge($method->getUri());
+        $targetUri = $baseUrl->merge($ReqMethod->getUri());
 
-        $request->setUri($targetUri);
+        $REQUEST->setUri($targetUri);
 
         ## req body ---------------------------------------------------------------------\
-        $request->setBody($method->getBody());
+        $REQUEST->setBody($ReqMethod->getBody());
+
 
         $this->browser = $CUR_BROWSER;
-        return $request;
+        return $REQUEST;
     }
 
     /**
@@ -189,5 +190,19 @@ class HttpPlatform implements iPlatform
     function makeResponse($result)
     {
         return new ResponsePlatform($result);
+    }
+
+
+    // ...
+
+    protected function __getRequestObject()
+    {
+        $request = new HttpRequest;
+
+        if ($reqOptions = $this->browser->inOptions()->getRequest())
+            ## build with browser request options if has
+            $request->from($reqOptions);
+
+        return $request;
     }
 }
