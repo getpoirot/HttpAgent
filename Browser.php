@@ -156,13 +156,13 @@ class Browser extends AbstractClient
      * @param array|BrowserOptions|iDataSetConveyor|null       $options
      *                                                         Agent Options To Merge With Default Agent Options
      */
-    function PATCH($uri, $body = null, $headers = null, $options = null) {}
+    function PATCH($uri, $headers = null, $body = null, $options = null) {}
 
-    function POST($uri, $body = null, $headers = null, $options = null) {}
+    function POST($uri, $headers = null, $body = null, $options = null) {}
 
-    function PUT($uri, $body = null, $headers = null, $options = null) {}
+    function PUT($uri, $headers = null, $body = null, $options = null) {}
 
-    function DELETE($uri, $body = null, $headers = null, $options = null) {}
+    function DELETE($uri, $headers = null, $body = null, $options = null) {}
 
     function TRACE($uri) {}
 
@@ -224,6 +224,32 @@ class Browser extends AbstractClient
      */
     function __call($methodName, $args)
     {
+        ## Named arguments
+        /*ReqMethod([
+            'uri' => '/',
+            'method'  => HttpRequest::METHOD_GET,
+            'browser' => [
+                'base_url'   => 'http://raya-media.com/page',
+                'user_agent' => 'Payam Browser',
+                'connection' => [
+                    'time_out' => 10,
+                    'persist'  => true,
+                    'allow_decoding' => false,
+                ],
+            ]
+        ])*/
+
+        ## Positional Params
+        // method()($uri, $headers = null, $body = null, $options = null)
+        if (count($args) >= 0 && isset($args[0]) && !is_array($args[0])) {
+            $curr = $args;
+            $args = [];
+            (!isset($curr[0])) ?: $args['uri']     = $curr[0];
+            (!isset($curr[1])) ?: $args['headers'] = $curr[1];
+            (!isset($curr[2])) ?: $args['body']    = $curr[2];
+            (!isset($curr[3])) ?: $args['browser'] = $curr[3];
+        }
+
         return parent::__call($methodName, $args);
     }
 

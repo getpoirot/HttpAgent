@@ -99,14 +99,17 @@ class HttpPlatform implements iPlatform
         $CUR_BROWSER = $this->browser;
         $this->browser = clone $CUR_BROWSER;
 
+        if (!$method instanceof ReqMethod)
+            $method = new ReqMethod($method->toArray());
 
-        $args = $method->getArguments();
+        $method_args = $method->toArray();
 
-        if ($args['browser']) {
+
+        if ($method_args['browser']) {
             ### Browser specific options
             $prepConn = false;
-            foreach($args['browser']->props()->readable as $prop) {
-                if ($val = $args['browser']->__get($prop)) {
+            foreach($method_args['browser']->props()->readable as $prop) {
+                if ($val = $method_args['browser']->__get($prop)) {
                     $this->browser->inOptions()->__set($prop, $val);
                     $prepConn = true;
                 }
@@ -117,13 +120,13 @@ class HttpPlatform implements iPlatform
         }
 
         ## req Uri
-        if ($args['uri'] instanceof iHttpUri) {
+        if ($method_args['uri'] instanceof iHttpUri) {
             ### reset server_url
-            $this->browser->inOptions()->setBaseUrl($args['uri']);
+            $this->browser->inOptions()->setBaseUrl($method_args['uri']);
             $this->prepareConnection($this->_connection);
 
             ### continue with sequence http uri
-            $args['uri'] = ($args['uri']->getPath()) ? $args['uri']->getPath() : new SeqPathJoinUri('/');
+            $method_args['uri'] = ($method_args['uri']->getPath()) ? $method_args['uri']->getPath() : new SeqPathJoinUri('/');
         }
 
         // ...
@@ -131,7 +134,7 @@ class HttpPlatform implements iPlatform
         # Build Request:
         $request = new HttpRequest;
 
-        $request->setMethod($args['method']);
+        $request->setMethod($method_args['method']);
         $request->setHost($this->_connection->inOptions()->getServerUrl()->getHost());
 
         ## req Headers ------------------------------------------------------------------\
@@ -151,20 +154,20 @@ class HttpPlatform implements iPlatform
             ));
 
         ### headers as request method options
-        if (is_array($args['headers']))
-            foreach($args['headers'] as $h)
+        if (is_array($method_args['headers']))
+            foreach($method_args['headers'] as $h)
                 $reqHeaders->set($h);
 
         ## req Uri ----------------------------------------------------------------------\
         $baseUrl   = $this->browser->inOptions()->getBaseUrl()->getPath();
         if (!$baseUrl)
             $baseUrl = new SeqPathJoinUri('/');
-        $targetUri = $baseUrl->merge($args['uri']);
+        $targetUri = $baseUrl->merge($method_args['uri']);
 
         $request->setUri($targetUri);
 
         ## req body ---------------------------------------------------------------------\
-        $request->setBody($args['body']);
+        $request->setBody($method_args['body']);
 
 
         $this->browser = $CUR_BROWSER;
