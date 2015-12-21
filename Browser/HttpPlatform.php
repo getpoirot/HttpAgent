@@ -166,7 +166,7 @@ class HttpPlatform implements iPlatform
             $baseUrl = new SeqPathJoinUri('/');
         $targetUri = $baseUrl->merge($ReqMethod->getUri());
 
-        $REQUEST->setUri($targetUri);
+        $REQUEST->getUri()->setPath($targetUri);
 
         ## req body ---------------------------------------------------------------------\
         $REQUEST->setBody($ReqMethod->getBody());
