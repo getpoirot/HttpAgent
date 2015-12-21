@@ -19,11 +19,11 @@ class BrowserOptions extends OpenOptions
 
     /** @var string|iHttpUri|UriInterface Base Url to Server */
     protected $baseUrl;
+    protected $userAgent;
 
     # default element options
     protected $connection;
-
-    protected $userAgent;
+    protected $request;
 
 
     /**
@@ -114,5 +114,37 @@ class BrowserOptions extends OpenOptions
     public function getConnection()
     {
         return $this->connection;
+    }
+
+    /**
+     * Set Request Options Params
+     * @param mixed $request
+     * @return $this
+     */
+    public function setRequest($request)
+    {
+        /** ALWAYS KEEP LAST VALUES AND NOT REPLACE WHOLE */
+
+        $tRequest = ($this->request) ? $this->request : new BrowserRequestOptions;
+
+        if (!$request instanceof BrowserRequestOptions && $request !== null)
+            $request = new BrowserRequestOptions($request);
+
+        foreach($request->props()->readable as $prop) {
+            if (($val = $request->__get($prop)) !== null) {
+                $tRequest->__set($prop, $val);
+            }
+        }
+
+        $this->request = $tRequest;
+        return $this;
+    }
+
+    /**
+     * @return BrowserRequestOptions
+     */
+    public function getRequest()
+    {
+        return $this->request;
     }
 }
