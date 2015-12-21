@@ -115,12 +115,12 @@ class Browser extends AbstractClient
 
     /**
      * @param string|iSeqPathUri|iHttpUri|UriInterface $uri
-     * @param array|iHeaderCollection|null             $headers
      * @param array|iDataSetConveyor|null              $options
+     * @param array|iHeaderCollection|null             $headers
      *
      * @return ResponsePlatform
      */
-    function GET($uri, $headers = null, $options = null)
+    function GET($uri, $options = null, $headers = null)
     {
         $method = new ReqMethod([
             'uri' => $uri,
@@ -147,22 +147,22 @@ class Browser extends AbstractClient
      */
     function OPTIONS($uri) {}
 
-    function HEAD($uri, $headers = null, $options = null) {}
+    function HEAD($uri, $options = null, $headers = null) {}
 
     /**
      * @param string|iSeqPathUri|iHttpUri|UriInterface         $uri
      * @param string|iStreamable|StreamInterface|resource|null $body
-     * @param array|iHeaderCollection|null                     $headers
      * @param array|BrowserOptions|iDataSetConveyor|null       $options
      *                                                         Agent Options To Merge With Default Agent Options
+     * @param array|iHeaderCollection|null                     $headers
      */
-    function PATCH($uri, $headers = null, $body = null, $options = null) {}
+    function PATCH($uri, $options = null, $body = null, $headers = null) {}
 
-    function POST($uri, $headers = null, $body = null, $options = null) {}
+    function POST($uri, $options = null, $body = null, $headers = null) {}
 
-    function PUT($uri, $headers = null, $body = null, $options = null) {}
+    function PUT($uri, $options = null, $body = null, $headers = null) {}
 
-    function DELETE($uri, $headers = null, $body = null, $options = null) {}
+    function DELETE($uri, $options = null, $body = null, $headers = null) {}
 
     function TRACE($uri) {}
 
@@ -245,9 +245,9 @@ class Browser extends AbstractClient
             $curr = $args;
             $args = [];
             (!isset($curr[0])) ?: $args['uri']     = $curr[0];
-            (!isset($curr[1])) ?: $args['headers'] = $curr[1];
+            (!isset($curr[1])) ?: $args['browser'] = $curr[1];
             (!isset($curr[2])) ?: $args['body']    = $curr[2];
-            (!isset($curr[3])) ?: $args['browser'] = $curr[3];
+            (!isset($curr[3])) ?: $args['headers'] = $curr[3];
         }
 
         return parent::__call($methodName, $args);
