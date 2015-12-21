@@ -46,9 +46,6 @@ class HttpPlatform implements iPlatform
      */
     function prepareConnection(iConnection $connection, $debug = false)
     {
-        # each time Connection can manipulated with Platform
-        $connection = clone $connection;
-
         $BROWSER_OPTS = $this->browser->inOptions();
 
         $reConnect = false;

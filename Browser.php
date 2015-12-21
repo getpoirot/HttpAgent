@@ -10,6 +10,7 @@ use Poirot\Core\Interfaces\iOptionsProvider;
 use Poirot\Core\Traits\CloneTrait;
 use Poirot\Http\Interfaces\iHeaderCollection;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
+use Poirot\Http\Message\HttpRequest;
 use Poirot\HttpAgent\Browser\HttpPlatform;
 use Poirot\HttpAgent\Browser\ResponsePlatform;
 use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
@@ -18,6 +19,31 @@ use Poirot\PathUri\Interfaces\iSeqPathUri;
 use Poirot\PathUri\Psr\UriInterface;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Psr\StreamInterface;
+
+/*
+$browser = new Browser('http://google.com/about', [
+    'connection' => [
+        'time_out' => 30,
+        'persist'  => false,
+    ],
+]);
+
+$method = new ReqMethod([
+    'uri' => '/',
+    'method'  => HttpRequest::METHOD_GET,
+    'browser' => [
+        'base_url'   => 'http://raya-media.com/page',
+        'user_agent' => 'Payam Browser',
+        'connection' => [
+            'time_out' => 10,
+            'persist'  => true,
+            'allow_decoding' => false,
+        ],
+    ]
+]);
+
+$response = $browser->call($method);
+*/
 
 class Browser extends AbstractClient
     implements iOptionsProvider
@@ -88,6 +114,27 @@ class Browser extends AbstractClient
     // ...
 
     /**
+     * @param string|iSeqPathUri|iHttpUri|UriInterface $uri
+     * @param array|iHeaderCollection|null             $headers
+     * @param array|iDataSetConveyor|null              $options
+     *
+     * @return ResponsePlatform
+     */
+    function GET($uri, $headers = null, $options = null)
+    {
+        $method = new ReqMethod([
+            'uri' => $uri,
+            'method'  => HttpRequest::METHOD_GET,
+        ]);
+
+        ($headers === null) ?: $method->setHeaders($headers);
+        ($options === null) ?: $method->setBrowser($options);
+
+        $response = $this->call($method);
+        return $response;
+    }
+
+    /**
      * Send HTTP OPTIONS request to server
      *
      * - using absolute url as target not depend on current request base url
@@ -99,13 +146,6 @@ class Browser extends AbstractClient
      * @return iHttpRequest
      */
     function OPTIONS($uri) {}
-
-    /**
-     * @param string|iSeqPathUri|iHttpUri|UriInterface $uri
-     * @param array|iHeaderCollection|null             $headers
-     * @param array|iDataSetConveyor|null              $options
-     */
-    function GET($uri, $headers = null, $options = null) {}
 
     function HEAD($uri, $headers = null, $options = null) {}
 
@@ -172,7 +212,7 @@ class Browser extends AbstractClient
     function call(iApiMethod $method)
     {
         $return = parent::call($method);
-        $this->connection()->close();
+        // $this->connection()->close();
         return $return;
     }
 
