@@ -12,6 +12,7 @@ use Poirot\HttpAgent\Browser;
 use Poirot\HttpAgent\Interfaces\iHttpTransporter;
 use Poirot\HttpAgent\ReqMethod;
 use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
+use Poirot\PathUri\HttpUri;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\SeqPathJoinUri;
 
@@ -165,8 +166,14 @@ class HttpPlatform implements iPlatform
         if (!$baseUrl)
             $baseUrl = new SeqPathJoinUri('/');
         $targetUri = $baseUrl->merge($ReqMethod->getUri());
-
         $REQUEST->getUri()->setPath($targetUri);
+
+        $uri = new HttpUri([
+            'path'     => $REQUEST->getUri()->getPath(),
+            'query'    => $REQUEST->getUri()->getQuery(),
+            'fragment' => $REQUEST->getUri()->getFragment(),
+        ]);
+        $REQUEST->setUri($uri);
 
         ## req body ---------------------------------------------------------------------\
         $REQUEST->setBody($ReqMethod->getBody());

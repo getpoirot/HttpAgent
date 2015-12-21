@@ -43,6 +43,26 @@ $method = new ReqMethod([
 ]);
 
 $response = $browser->call($method);
+
+// ================================================================
+
+$browser->custom(
+    'http://www.pasargad-co.ir/forms/contact'
+    , [
+        'connection' => ['time_out' => 30],
+        'request'    => [
+            'uri_options' => [
+                'query'     => 'first=value&arr[]=foo+bar&arr[]=baz',
+                'fragment'  => 'fragment',
+            ]
+        ],
+    ]
+    , 'Salam Pasargad e Khar'
+    , ['this' => 'header']
+)->getResult(function($response) {
+    $response->flush(false);
+});
+
 */
 
 class Browser extends AbstractClient
