@@ -219,6 +219,7 @@ class StreamHttpTransporter extends AbstractConnection
 
             # receive rest response body
             $bodyStream = $this->receive();
+
             ## subset stream to body part without headers, seek will always point to body
             $bodyStream = new Streamable\SegmentWrapStream($bodyStream, -1, $bodyStream->getCurrOffset());
             $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED, [
@@ -289,6 +290,12 @@ class StreamHttpTransporter extends AbstractConnection
         $curSeek = $this->_buffer_seek;
 
         $stream = $this->streamable;
+
+        if ($stream->getResource()->meta()->isTimedOut())
+            throw new \RuntimeException(
+                "Read timed out after {$this->inOptions()->getTimeout()} seconds."
+            );
+
         while(!$stream->isEOF() && ($line = $stream->readLine("\r\n")) !== null ) {
             $break = false;
             $response = $line."\r\n";
