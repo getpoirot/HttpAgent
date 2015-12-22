@@ -35,6 +35,8 @@ $response = $stream->send($request);
 kd($response->toString());
 */
 
+// TODO build AbstractTransporter Class
+
 class StreamHttpTransporter extends AbstractConnection
     implements iHttpTransporter
 {
