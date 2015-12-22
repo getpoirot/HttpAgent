@@ -11,6 +11,7 @@ use Poirot\Http\Message\HttpResponse;
 use Poirot\Http\Psr\Interfaces\RequestInterface;
 use Poirot\HttpAgent\Interfaces\iHttpTransporter;
 use Poirot\HttpAgent\Transporter\Listeners\onEventsCloseConnection;
+use Poirot\HttpAgent\Transporter\Listeners\onRequestPrepareSend;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseBodyReceived;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseHeadersReceived;
 use Poirot\Stream\Streamable;
@@ -189,9 +190,25 @@ class StreamHttpTransporter extends AbstractConnection
         {
             $stream = $this->streamable;
 
+            $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_REQUEST_SEND_PREPARE, [
+                'request'     => $expr,
+                'transporter' => $this,
+            ]);
+
+            /** @var iHttpRequest $expr */
+            $expr = $emitter->collector()->getRequest();
+
             # send request, first headers
             $stream->write($expr->renderRequestLine());
             $stream->write($expr->renderHeaders());
+
+            # send request body
+            $body = $expr->getBody();
+            if ($body !== null) {
+                if (is_string($body))
+                    $body = new Streamable\TemporaryStream($body);
+                $body->pipeTo($stream);
+            }
 
             # receive response headers once request sent
             $headersStr = $this->receive()->read();
@@ -209,13 +226,6 @@ class StreamHttpTransporter extends AbstractConnection
             if (!$emitter->collector()->getContinue())
                 return $response;
 
-            # send request body
-            $body = $expr->getBody();
-            if ($body !== null) {
-                if (is_string($body))
-                    $body = new Streamable\TemporaryStream($body);
-                $body->pipeTo($stream);
-            }
 
             # receive rest response body
             $bodyStream = $this->receive();
@@ -392,6 +402,14 @@ class StreamHttpTransporter extends AbstractConnection
 
     protected function __attachDefaultListeners()
     {
+        $this->event()->on(
+            TransporterHttpEvents::EVENT_REQUEST_SEND_PREPARE
+            , new onRequestPrepareSend
+            , 100
+        );
+
+        // ...
+
         $this->event()->on(
             TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED
             , new onResponseHeadersReceived
