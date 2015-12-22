@@ -147,8 +147,23 @@ class Browser extends AbstractClient
             'method'  => HttpRequest::METHOD_GET,
         ]);
 
-        ($headers === null) ?: $method->setHeaders($headers);
         ($options === null) ?: $method->setBrowser($options);
+        ($headers === null) ?: $method->setHeaders($headers);
+
+        $response = $this->call($method);
+        return $response;
+    }
+
+    function POST($uri, $options = null, $body = null, $headers = null)
+    {
+        $method = new ReqMethod([
+            'uri'     => $uri,
+            'method'  => HttpRequest::METHOD_POST,
+        ]);
+
+        ($options === null) ?: $method->setBrowser($options);
+        ($body    === null) ?: $method->setBody($body);
+        ($headers === null) ?: $method->setHeaders($headers);
 
         $response = $this->call($method);
         return $response;
@@ -177,8 +192,6 @@ class Browser extends AbstractClient
      * @param array|iHeaderCollection|null                     $headers
      */
     function PATCH($uri, $options = null, $body = null, $headers = null) {}
-
-    function POST($uri, $options = null, $body = null, $headers = null) {}
 
     function PUT($uri, $options = null, $body = null, $headers = null) {}
 
@@ -232,7 +245,6 @@ class Browser extends AbstractClient
     function call(iApiMethod $method)
     {
         $return = parent::call($method);
-        // $this->connection()->close();
         return $return;
     }
 

@@ -72,8 +72,8 @@ class BrowserOptions extends OpenOptions
             $userAgent = '';
 
             if (!$userAgent) {
-                $userAgent = 'PoirotBrowser ';
-                $userAgent .= ' PHP/' . PHP_VERSION;
+                $userAgent = 'PoirotBrowser';
+                $userAgent .= '-PHP/' . PHP_VERSION;
             }
 
             $this->setUserAgent($userAgent);
