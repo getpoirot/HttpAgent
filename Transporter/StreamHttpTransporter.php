@@ -3,7 +3,6 @@ namespace Poirot\HttpAgent\Transporter;
 
 use Poirot\ApiClient\AbstractConnection;
 use Poirot\ApiClient\Exception\ApiCallException;
-use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpRequest;
