@@ -5,10 +5,16 @@ use Poirot\ApiClient\Interfaces\iConnection;
 use Poirot\ApiClient\Interfaces\iPlatform;
 use Poirot\ApiClient\Interfaces\Request\iApiMethod;
 use Poirot\ApiClient\Interfaces\Response\iResponse;
+use Poirot\Container\Interfaces\Plugins\iInvokePluginsProvider;
+use Poirot\Container\Interfaces\Plugins\iPluginManagerAware;
+use Poirot\Container\Interfaces\Plugins\iPluginManagerProvider;
+use Poirot\Container\Plugins\AbstractPlugins;
+use Poirot\Container\Plugins\InvokablePlugins;
 use Poirot\Http\Header\HeaderFactory;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\HttpAgent\Browser;
+use Poirot\HttpAgent\Interfaces\iBrowserExpressionPlugin;
 use Poirot\HttpAgent\Interfaces\iHttpTransporter;
 use Poirot\HttpAgent\ReqMethod;
 use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
@@ -16,12 +22,21 @@ use Poirot\PathUri\HttpUri;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\SeqPathJoinUri;
 
-class HttpPlatform implements iPlatform
+class HttpPlatform
+    implements iPlatform
+    , iInvokePluginsProvider
+    , iPluginManagerProvider
+    , iPluginManagerAware
 {
     /** @var Browser */
     protected $browser;
     /** @var iHttpTransporter */
     protected $_connection;
+
+    /** @var BrowserPluginManager */
+    protected $plugin_manager;
+    /** @var InvokablePlugins */
+    protected $_plugins;
 
     /**
      * Construct
@@ -103,8 +118,16 @@ class HttpPlatform implements iPlatform
         if (!$ReqMethod instanceof ReqMethod)
             $ReqMethod = new ReqMethod($ReqMethod->toArray());
 
+
+        # Request Options:
+        ## (1)
+        /*
+         * $browser->POST('/api/v1/auth/login', [
+         *      'form_data' => [
+         *      // ...
+         */
         if ($ReqMethod->getBrowser()) {
-            ### Browser specific options
+            ## Browser specific options
             $prepConn = false;
             foreach($ReqMethod->getBrowser()->props()->readable as $prop) {
                 if ($val = $ReqMethod->getBrowser()->__get($prop)) {
@@ -117,9 +140,16 @@ class HttpPlatform implements iPlatform
             (!$prepConn) ?: $this->prepareConnection($this->_connection, true);
         }
 
-        ## req Uri
+        // ...
+
         if ($ReqMethod->getUri() instanceof iHttpUri) {
-            ### reset server_url
+            ## Reset Server Base Url When Absolute Http URI Requested
+            /*
+             * $browser->get(
+             *   'http://www.pasargad-co.ir/forms/contact'
+             *   , [ 'connection' => ['time_out' => 30],
+             *     // ...
+             */
             $this->browser->inOptions()->setBaseUrl($ReqMethod->getUri());
             $this->prepareConnection($this->_connection);
 
@@ -131,9 +161,8 @@ class HttpPlatform implements iPlatform
             $ReqMethod->setUri($t_uri);
         }
 
-        // ...
-
-        # Build Request:
+        # Build Request Http Message:
+        ## (2)
         $REQUEST = $this->__getRequestObject();
 
         $REQUEST->setMethod($ReqMethod->getMethod());
@@ -149,11 +178,11 @@ class HttpPlatform implements iPlatform
             , 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
         ));
 
-        if ($this->browser->inOptions()->getConnection())
+        /*if ($this->browser->inOptions()->getConnection())
             (!$this->browser->inOptions()->getConnection()->isAllowDecoding())
                 ?: $reqHeaders->set(HeaderFactory::factory('Accept-Encoding'
                 , 'gzip, deflate, sdch'
-            ));
+            ));*/
 
         ### headers as request method options
         if ($ReqMethod->getHeaders()) {
@@ -165,9 +194,11 @@ class HttpPlatform implements iPlatform
         $baseUrl   = $this->browser->inOptions()->getBaseUrl()->getPath();
         if (!$baseUrl)
             $baseUrl = new SeqPathJoinUri('/');
-        $targetUri = $baseUrl->merge($ReqMethod->getUri());
+        $targetUri = $baseUrl->merge($ReqMethod->getUri()); ### merge with request base url path
         $REQUEST->getUri()->setPath($targetUri);
 
+        ### remove unnecessary iHttpUri parts such as port, host, ...
+        ### its presented as host and etc. on Request Message Obect
         $uri = new HttpUri([
             'path'     => $REQUEST->getUri()->getPath(),
             'query'    => $REQUEST->getUri()->getQuery(),
@@ -178,6 +209,25 @@ class HttpPlatform implements iPlatform
         ## req body ---------------------------------------------------------------------\
         $REQUEST->setBody($ReqMethod->getBody());
 
+
+        # Implement Browser Plugins:
+        ## (3)
+        foreach($ReqMethod->getBrowser()->props()->readable as $prop) {
+            if (!$this->getPluginManager()->has($prop))
+                /*
+                 * $browser->POST('/api/v1/auth/login', [
+                 *      'form_data' => [ // <=== plugin form_data will trigger with this params
+                 *      // ...
+                */
+                continue; ## no plugin bind on this option
+
+            /** @var Browser\Plugin\AbstractBrowserPlugin $plugin */
+            $plugin = $this->getPluginManager()->fresh($prop);
+            $plugin->from($ReqMethod->getBrowser()->__get($prop)); ### options for service
+
+            if($plugin instanceof iBrowserExpressionPlugin)
+                $plugin->withHttpRequest($REQUEST);
+        }
 
         $this->browser = $CUR_BROWSER;
         return $REQUEST;
@@ -211,5 +261,49 @@ class HttpPlatform implements iPlatform
             $request->from($reqOptions);
 
         return $request;
+    }
+
+
+    // Plugins:
+
+    /**
+     * Plugin Manager
+     *
+     * @return InvokablePlugins
+     */
+    function plugin()
+    {
+        if (!$this->_plugins)
+            $this->_plugins = new InvokablePlugins(
+                $this->getPluginManager()
+            );
+
+        return $this->_plugins;
+    }
+
+    /**
+     * Get Plugins Manager
+     *
+     * @return BrowserPluginManager|AbstractPlugins
+     */
+    function getPluginManager()
+    {
+        if (!$this->plugin_manager)
+            $this->plugin_manager = new BrowserPluginManager;
+
+        return $this->plugin_manager;
+    }
+
+    /**
+     * Set Plugins Manager
+     *
+     * @param BrowserPluginManager|AbstractPlugins $plugins
+     *
+     * @return $this
+     */
+    function setPluginManager(AbstractPlugins $plugins)
+    {
+        $this->plugin_manager = $plugins;
+        return $this;
     }
 }
