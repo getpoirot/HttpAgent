@@ -9,7 +9,6 @@ use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Core\Interfaces\iOptionsProvider;
 use Poirot\Core\Traits\CloneTrait;
 use Poirot\Http\Interfaces\iHeaderCollection;
-use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\HttpAgent\Browser\HttpPlatform;
 use Poirot\HttpAgent\Browser\ResponsePlatform;
@@ -18,7 +17,6 @@ use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\Interfaces\iSeqPathUri;
 use Poirot\PathUri\Psr\UriInterface;
 use Poirot\Stream\Interfaces\iStreamable;
-use Poirot\Stream\Psr\StreamInterface;
 
 /*
 $browser = new Browser('http://google.com/about', [
@@ -132,33 +130,122 @@ class Browser extends AbstractClient
 
 
     // ...
+    /** @link http://www.tutorialspoint.com/http/http_methods.htm */
 
     /**
-     * @param string|iSeqPathUri|iHttpUri|UriInterface $uri
-     * @param array|iDataSetConveyor|null              $options
-     * @param array|iHeaderCollection|null             $headers
-     *
      * @return ResponsePlatform
      */
     function GET($uri, $options = null, $headers = null)
     {
-        $method = new ReqMethod([
-            'uri' => $uri,
-            'method'  => HttpRequest::METHOD_GET,
-        ]);
-
-        ($options === null) ?: $method->setBrowser($options);
-        ($headers === null) ?: $method->setHeaders($headers);
-
-        $response = $this->call($method);
-        return $response;
+        return $this->__makeRequestCall(HttpRequest::METHOD_GET, $uri, $options, null, $headers);
     }
 
+    /**
+     * note: For retrieving meta-information written in response headers,
+     *       without having to transport the entire content(body).
+     *
+     * @return ResponsePlatform
+     */
+    function HEAD($uri, $options = null, $headers = null)
+    {
+        return $this->__makeRequestCall(HttpRequest::METHOD_HEAD, $uri, $options, null, $headers);
+    }
+
+    /**
+     * ! post request should always has Content-Length Header if has body
+     *   with value equals to body size
+     *   @see http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.4
+     *
+     * @return ResponsePlatform
+     */
     function POST($uri, $options = null, $body = null, $headers = null)
     {
+        return $this->__makeRequestCall(HttpRequest::METHOD_POST, $uri, $options, null, $headers);
+    }
+
+    /**
+     * note: PUT puts a file or resource at a specific URI, and exactly at that URI.
+     *       If there's already a file or resource at that URI, PUT replaces that
+     *       file or resource. If there is no file or resource there, PUT creates one.
+     *
+     * @return ResponsePlatform
+     */
+    function PUT($uri, $options = null, $body = null, $headers = null)
+    {
+        return $this->__makeRequestCall(HttpRequest::METHOD_PUT, $uri, $options, $body, $headers);
+    }
+
+    /**
+     * note: Used to update partial resources.
+     *       For instance, when you only need to update one field of the resource,
+     *       PUTting a complete resource representation might be cumbersome and
+     *       utilizes more bandwidth.
+     *
+     * @return ResponsePlatform
+     */
+    function PATCH($uri, $options = null, $body = null, $headers = null)
+    {
+        return $this->__makeRequestCall(HttpRequest::METHOD_PATCH, $uri, $options, $body, $headers);
+    }
+
+    /**
+     * note: Removes all current representations of the target resource given by a URI
+     * @return ResponsePlatform
+     */
+    function DELETE($uri, $options = null, $headers = null)
+    {
+        return $this->__makeRequestCall(HttpRequest::METHOD_DELETE, $uri, $options, null, $headers);
+    }
+
+    /**
+     * note: Allows the client to determine the options and/or requirements
+     *       associated with a resource, or the capabilities of a server, without
+     *       implying a resource action or initiating a resource retrieval.
+     *
+     * @return ResponsePlatform
+     */
+    function OPTIONS($uri, $options = null, $headers = null)
+    {
+        return $this->__makeRequestCall(HttpRequest::METHOD_OPTIONS, $uri, $options, null, $headers);
+    }
+
+    /**
+     * note: used by the client to establish a network connection to
+     *       a web server over HTTP
+     *
+     * @return ResponsePlatform
+     */
+    function CONNECT($uri, $options = null, $headers = null)
+    {
+        return $this->__makeRequestCall(HttpRequest::METHOD_CONNECT, $uri, $options, null, $headers);
+    }
+
+    /**
+     * note: used to echo the contents of an HTTP Request back to the requester
+     *       which can be used for debugging purpose at the time of development
+     *
+     * @return ResponsePlatform
+     */
+    function TRACE($uri, $options = null, $headers = null)
+    {
+        return $this->__makeRequestCall(HttpRequest::METHOD_TRACE, $uri, $options, null, $headers);
+    }
+
+    /**
+     * Make Request Method Call To Server
+     *
+     * @param string|iSeqPathUri|iHttpUri|UriInterface $uri     Absolute Uri Or Relative To BaseUrl
+     * @param array|iDataSetConveyor|null              $options Browser Options Or Open Options Used By Plugins
+     * @param iStreamable|string|null                  $body    Request Body
+     * @param array|iHeaderCollection|null             $headers Specific Request Header/Replace Defaults
+     *
+     * @return ResponsePlatform
+     */
+    protected function __makeRequestCall($method, $uri, $options=null, $body=null, $headers=null)
+    {
         $method = new ReqMethod([
-            'uri'     => $uri,
-            'method'  => HttpRequest::METHOD_POST,
+            'uri'    => $uri,
+            'method' => $method,
         ]);
 
         ($options === null) ?: $method->setBrowser($options);
@@ -168,39 +255,6 @@ class Browser extends AbstractClient
         $response = $this->call($method);
         return $response;
     }
-
-    /**
-     * Send HTTP OPTIONS request to server
-     *
-     * - using absolute url as target not depend on current request base url
-     *
-     * - create method build from platform, platform will build request object from that
-     *
-     * @param string|iHttpUri|UriInterface $uri Relative Uri that merged into base url
-     *
-     * @return iHttpRequest
-     */
-    function OPTIONS($uri) {}
-
-    function HEAD($uri, $options = null, $headers = null) {}
-
-    /**
-     * @param string|iSeqPathUri|iHttpUri|UriInterface         $uri
-     * @param string|iStreamable|StreamInterface|resource|null $body
-     * @param array|BrowserOptions|iDataSetConveyor|null       $options
-     *                                                         Agent Options To Merge With Default Agent Options
-     * @param array|iHeaderCollection|null                     $headers
-     */
-    function PATCH($uri, $options = null, $body = null, $headers = null) {}
-
-    function PUT($uri, $options = null, $body = null, $headers = null) {}
-
-    function DELETE($uri, $options = null, $body = null, $headers = null) {}
-
-    function TRACE($uri) {}
-
-    function CONNECT($uri) {}
-
 
     // ...
 
@@ -284,5 +338,4 @@ class Browser extends AbstractClient
 
         return parent::__call($methodName, $args);
     }
-
 }
