@@ -38,9 +38,9 @@ echo $data->token;
 */
 
 class BJsonPlugin extends AbstractBrowserPlugin
-    implements iBrowserExpressionPlugin
+    implements iHttpPlugin
+    , iBrowserExpressionPlugin
     , iBrowserResponsePlugin
-    , iHttpPlugin
 {
     use ResponsePluginTrait; // Implement Http Response Plugable
     protected $_t_options__internal = [
