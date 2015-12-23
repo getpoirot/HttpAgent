@@ -213,6 +213,7 @@ class StreamHttpTransporter extends AbstractConnection
 
             # receive response headers once request sent
             $headersStr = $this->receive()->read();
+
             if (!$headersStr)
                 throw new \Exception('Server not respond to this request.');
             $response   = new HttpResponse($headersStr);

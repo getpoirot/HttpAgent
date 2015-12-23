@@ -63,8 +63,8 @@ class ResponsePlatform extends Response
      * @param callable|null $proc
      * @return HttpResponse
      */
-    function getResult(callable $proc = null)
+    function expected(callable $proc = null)
     {
-        return parent::getResult($proc);
+        return parent::expected($proc);
     }
 }
