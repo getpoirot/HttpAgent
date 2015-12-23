@@ -145,6 +145,9 @@ class BrowserOptions extends OpenOptions
      */
     public function getRequest()
     {
+        if (!$this->request)
+            $this->request = new BrowserRequestOptions;
+
         return $this->request;
     }
 }

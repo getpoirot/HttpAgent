@@ -49,6 +49,9 @@ $browser->custom(
     , [
         'connection' => ['time_out' => 30],
         'request'    => [
+            'headers' => [
+                'X-data' => 'extra header data'
+            ]
             'uri_options' => [
                 'query'     => 'first=value&arr[]=foo+bar&arr[]=baz',
                 'fragment'  => 'fragment',

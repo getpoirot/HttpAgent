@@ -116,6 +116,7 @@ class HttpPlatform
         $CUR_BROWSER = $this->browser;
         $this->browser = clone $CUR_BROWSER;
 
+
         if (!$ReqMethod instanceof ReqMethod)
             $ReqMethod = new ReqMethod($ReqMethod->toArray());
 
@@ -184,6 +185,10 @@ class HttpPlatform
                 ?: $reqHeaders->set(HeaderFactory::factory('Accept-Encoding'
                 , 'gzip, deflate, sdch'
             ));*/
+
+        ### headers as default browser defined header
+        foreach($this->browser->inOptions()->getRequest()->getHeaders() as $h)
+            $reqHeaders->set($h);
 
         ### headers as request method options
         if ($ReqMethod->getHeaders()) {

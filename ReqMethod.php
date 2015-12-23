@@ -193,6 +193,9 @@ class ReqMethod extends Method
      */
     public function getBrowser()
     {
+        if (!$this->browser)
+            $this->browser = new BrowserOptions;
+
         return $this->browser;
     }
 }
