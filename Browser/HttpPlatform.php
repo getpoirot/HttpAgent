@@ -15,6 +15,7 @@ use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\HttpAgent\Browser;
 use Poirot\HttpAgent\Interfaces\iBrowserExpressionPlugin;
+use Poirot\HttpAgent\Interfaces\iBrowserResponsePlugin;
 use Poirot\HttpAgent\Interfaces\iHttpTransporter;
 use Poirot\HttpAgent\ReqMethod;
 use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
@@ -239,14 +240,20 @@ class HttpPlatform
      * - Result must be compatible with platform
      * - Throw exceptions if response has error
      *
-     * @param HttpResponse $result Server Result
+     * @param HttpResponse $response Server Result
      *
      * @throws \Exception
      * @return iResponse
      */
-    function makeResponse($result)
+    function makeResponse($response)
     {
-        return new ResponsePlatform($result);
+        foreach ($this->getPluginManager()->listServices() as $serviceName) {
+            if (($service = $this->getPluginManager()->get($serviceName)) instanceof iBrowserResponsePlugin)
+                $service->withHttpResponse($response);
+        }
+
+        $result = new ResponsePlatform($response);
+        return $result;
     }
 
 
@@ -271,7 +278,7 @@ class HttpPlatform
      *
      * @return InvokablePlugins
      */
-    function plugin()
+    function plg()
     {
         if (!$this->_plugins)
             $this->_plugins = new InvokablePlugins(

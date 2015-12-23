@@ -22,6 +22,7 @@ class BrowserPluginManager extends AbstractPlugins
 {
     protected $loader_resources = [
         'form_data' => 'Poirot\HttpAgent\Browser\Plugin\BFormDataPlugin',
+        'json'      => 'Poirot\HttpAgent\Browser\Plugin\BJsonPlugin',
     ];
 
     /**
