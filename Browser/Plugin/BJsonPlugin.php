@@ -11,22 +11,59 @@ use Poirot\Http\Plugins\Response\ResponsePluginTrait;
 use Poirot\HttpAgent\Interfaces\iBrowserExpressionPlugin;
 use Poirot\HttpAgent\Interfaces\iBrowserResponsePlugin;
 
+/*
+$data = $browser->POST('/api/v1/auth/login'
+    , [ 'json' // <=== send application/json to server
+    => [
+            'email'    => 'naderi.payam@gmail.com',
+            'password' => '123456'
+        ]
+    ]
+)->getResult(new Browser\Plugin\BJsonPlugin());
+
+// ===================================================
+
+$data = $browser->POST('/api/v1/auth/login'
+    , [ 'form_data'
+        => [
+            'email'    => 'naderi.payam@gmail.com',
+            'password' => '123456'
+        ]
+    ]
+)->getResult()->plg()->json();
+
+
+echo $data->token;
+
+*/
+
 class BJsonPlugin extends AbstractBrowserPlugin
     implements iBrowserExpressionPlugin
     , iBrowserResponsePlugin
     , iHttpPlugin
 {
     use ResponsePluginTrait; // Implement Http Response Plugable
+    protected $_t_options__internal = [
+        'setMessageObject', // this method will ignore as option in prop
+        'getMessageObject',
+    ];
 
     /**
      * note: can executed with invokablePlugin directly to get result
      *       $ResponsePlatform->getResult()->plg()->json();
+     *
+     *       also can be used as:
+     *       $ResponsePlatform->getResult(new BjsonPlugin);
+     *
+     * @param null|iHttpResponse $response Can used as functor on :getResult()
+     *
+     * @return \stdClass
      */
-    function __invoke()
+    function __invoke(iHttpResponse $response = null)
     {
-        $response = $this->getMessageObject();
-        $body     = $response->getBody()->rewind()->read();
+        ($response !== null) ?: $response = $this->getMessageObject();
 
+        $body = $response->getBody()->rewind()->read();
         return json_decode($body);
     }
 

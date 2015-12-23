@@ -296,7 +296,7 @@ class HttpPlatform
     function getPluginManager()
     {
         if (!$this->plugin_manager)
-            $this->plugin_manager = new BrowserPluginManager;
+            $this->setPluginManager(new BrowserPluginManager);
 
         return $this->plugin_manager;
     }
