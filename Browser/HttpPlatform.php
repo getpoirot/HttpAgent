@@ -9,7 +9,7 @@ use Poirot\Container\Interfaces\Plugins\iInvokePluginsProvider;
 use Poirot\Container\Interfaces\Plugins\iPluginManagerAware;
 use Poirot\Container\Interfaces\Plugins\iPluginManagerProvider;
 use Poirot\Container\Plugins\AbstractPlugins;
-use Poirot\Container\Plugins\InvokablePlugins;
+use Poirot\Container\Plugins\PluginsInvokable;
 use Poirot\Http\Header\HeaderFactory;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
@@ -36,7 +36,7 @@ class HttpPlatform
 
     /** @var BrowserPluginManager */
     protected $plugin_manager;
-    /** @var InvokablePlugins */
+    /** @var PluginsInvokable */
     protected $_plugins;
 
     /**
@@ -281,12 +281,12 @@ class HttpPlatform
     /**
      * Plugin Manager
      *
-     * @return InvokablePlugins
+     * @return PluginsInvokable
      */
     function plg()
     {
         if (!$this->_plugins)
-            $this->_plugins = new InvokablePlugins(
+            $this->_plugins = new PluginsInvokable(
                 $this->getPluginManager()
             );
 

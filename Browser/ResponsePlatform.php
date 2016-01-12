@@ -22,7 +22,7 @@ class ResponsePlatform extends Response
 
         /** @var iHeader $h */
         foreach($response->getHeaders() as $h)
-            $this->meta()->set($h->label(), $h);
+            $this->meta()->set($h->getLabel(), $h);
 
         $statusPlugin = new ResposeStatusPlugin(['message_object' => $response]);
         if (!$statusPlugin->isSuccess())
