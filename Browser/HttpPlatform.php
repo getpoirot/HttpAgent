@@ -18,7 +18,7 @@ use Poirot\HttpAgent\Interfaces\iBrowserExpressionPlugin;
 use Poirot\HttpAgent\Interfaces\iBrowserResponsePlugin;
 use Poirot\HttpAgent\Interfaces\iHttpTransporter;
 use Poirot\HttpAgent\ReqMethod;
-use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
+use Poirot\HttpAgent\Transporter\HttpStreamTransporter;
 use Poirot\PathUri\HttpUri;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\SeqPathJoinUri;
@@ -56,12 +56,13 @@ class HttpPlatform
      * - manipulate header or something in connection
      * - get connect to resource
      *
-     * @param StreamHttpTransporter|iConnection $connection
+     * @param HttpStreamTransporter|iConnection $connection
+     * @param iApiMethod|null                   $method
      *
      * @throws \Exception
-     * @return StreamHttpTransporter|iHttpTransporter
+     * @return HttpStreamTransporter|iHttpTransporter
      */
-    function prepareConnection(iConnection $connection, $debug = false)
+    function prepareConnection(iConnection $connection, $method = null)
     {
         $BROWSER_OPTS = $this->browser->inOptions();
 

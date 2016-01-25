@@ -6,13 +6,13 @@ use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\Http\Plugins\Response\Status;
-use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
+use Poirot\HttpAgent\Transporter\HttpStreamTransporter;
 use Poirot\Stream\Streamable;
 
 class onResponseHeadersReceived extends AbstractListener
 {
     /**
-     * @param StreamHttpTransporter $transporter
+     * @param HttpStreamTransporter $transporter
      * @param HttpResponse          $response
      * @param Streamable            $stream
      * @param iHttpRequest          $request

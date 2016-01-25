@@ -12,7 +12,7 @@ use Poirot\Http\Interfaces\iHeaderCollection;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\HttpAgent\Browser\HttpPlatform;
 use Poirot\HttpAgent\Browser\ResponsePlatform;
-use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
+use Poirot\HttpAgent\Transporter\HttpStreamTransporter;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\Interfaces\iSeqPathUri;
 use Poirot\PathUri\Psr\UriInterface;
@@ -71,7 +71,7 @@ class Browser extends AbstractClient
 {
     use CloneTrait;
 
-    /** @var StreamHttpTransporter|iConnection*/
+    /** @var HttpStreamTransporter|iConnection*/
     protected $connection;
     /** @var HttpPlatform */
     protected $platform;
@@ -121,12 +121,12 @@ class Browser extends AbstractClient
     /**
      * Get Connection Adapter
      *
-     * @return StreamHttpTransporter
+     * @return HttpStreamTransporter
      */
     function connection()
     {
         if (!$this->connection)
-            $this->connection = new StreamHttpTransporter;
+            $this->connection = new HttpStreamTransporter;
 
         return $this->connection;
     }

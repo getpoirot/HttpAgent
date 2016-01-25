@@ -5,7 +5,7 @@ use Poirot\Events\Listener\AbstractListener;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\HttpAgent\Transporter\StreamFilter\ChunkTransferDecodeFilter;
-use Poirot\HttpAgent\Transporter\StreamHttpTransporter;
+use Poirot\HttpAgent\Transporter\HttpStreamTransporter;
 use Poirot\Stream\Filter\PhpRegisteredFilter;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
@@ -13,7 +13,7 @@ use Poirot\Stream\Streamable;
 class onResponseBodyReceived extends AbstractListener
 {
     /**
-     * @param StreamHttpTransporter $transporter
+     * @param HttpStreamTransporter $transporter
      * @param iStreamable           $body
      * @param HttpResponse          $response
      * @param Streamable            $stream
