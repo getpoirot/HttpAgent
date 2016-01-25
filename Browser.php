@@ -167,7 +167,7 @@ class Browser extends AbstractClient
      */
     function POST($uri, $options = null, $body = null, $headers = null)
     {
-        return $this->__makeRequestCall(HttpRequest::METHOD_POST, $uri, $options, null, $headers);
+        return $this->__makeRequestCall(HttpRequest::METHOD_POST, $uri, $options, $body, $headers);
     }
 
     /**
