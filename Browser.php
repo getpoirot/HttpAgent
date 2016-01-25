@@ -66,6 +66,10 @@ $browser->custom(
 
 */
 
+/**
+ * TODO call request object
+ *      $this->doRequest(HttpRequest)
+ */
 class Browser extends AbstractClient
     implements iOptionsProvider
 {
