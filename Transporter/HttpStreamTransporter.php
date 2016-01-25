@@ -36,7 +36,7 @@ kd($response->toString());
 
 // TODO build AbstractTransporter Class
 
-class StreamHttpTransporter extends AbstractConnection
+class HttpStreamTransporter extends AbstractConnection
     implements iHttpTransporter
 {
     /** @var Streamable When Connected */
