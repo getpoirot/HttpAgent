@@ -64,7 +64,7 @@ class HttpStreamTransporter extends AbstractConnection
      *
      * - pass connection options on construct
      *
-     * @param Array|iDataSetConveyor $options Connection Options
+     * @param array|iDataSetConveyor $options Connection Options
      */
     function __construct($options = null)
     {
@@ -78,6 +78,7 @@ class HttpStreamTransporter extends AbstractConnection
      * - prepare resource with options
      *
      * @throws \Exception
+     * @return mixed Connection Resource
      */
     function getConnect()
     {
@@ -122,7 +123,7 @@ class HttpStreamTransporter extends AbstractConnection
             ));
         }
 
-        $this->streamable = new Streamable($resource);
+        return $this->streamable = new Streamable($resource);
     }
 
     /**
