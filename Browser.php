@@ -248,16 +248,8 @@ class Browser extends AbstractClient
      */
     function request(HttpRequest $request, $options = null)
     {
-        $method = new ReqMethod([
-            'uri'     => $request->getUri(),
-            'method'  => $request->getMethod(),
-            'headers' => clone $request->getHeaders(),
-            'body'    => $request->getBody(),
-        ]);
-
-        ($options === null) ?: $method->setBrowser($options);
-        $response = $this->call($method);
-        return $response;
+        $uri = $request->getUri();
+        return $this->__makeRequestCall($request->getMethod(), $uri, $options, null, $request->getHeaders());
     }
 
     /**
