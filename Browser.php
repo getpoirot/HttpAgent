@@ -239,6 +239,28 @@ class Browser extends AbstractClient
     }
 
     /**
+     * Send Http Request Message
+     *
+     * @param HttpRequest $request
+     * @param null $options
+     *
+     * @return ResponsePlatform
+     */
+    function request(HttpRequest $request, $options = null)
+    {
+        $method = new ReqMethod([
+            'uri'     => $request->getUri(),
+            'method'  => $request->getMethod(),
+            'headers' => clone $request->getHeaders(),
+            'body'    => $request->getBody(),
+        ]);
+
+        ($options === null) ?: $method->setBrowser($options);
+        $response = $this->call($method);
+        return $response;
+    }
+
+    /**
      * Make Request Method Call To Server
      *
      * @param string|iSeqPathUri|iHttpUri|UriInterface $uri     Absolute Uri Or Relative To BaseUrl
