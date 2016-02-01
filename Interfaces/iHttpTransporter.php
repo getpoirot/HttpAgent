@@ -2,7 +2,7 @@
 namespace Poirot\HttpAgent\Interfaces;
 
 use Poirot\ApiClient\Exception\ApiCallException;
-use Poirot\ApiClient\Interfaces\iConnection;
+use Poirot\ApiClient\Interfaces\iTransporter;
 use Poirot\Events\Interfaces\Respec\iEventProvider;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpResponse;
@@ -11,7 +11,7 @@ use Poirot\HttpAgent\Transporter\HttpTransporterOptions;
 use Poirot\HttpAgent\Transporter\TransporterHttpEvents;
 
 interface iHttpTransporter
-    extends iConnection
+    extends iTransporter
     , iEventProvider
 {
     /**

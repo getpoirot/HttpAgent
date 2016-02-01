@@ -1,7 +1,7 @@
 <?php
 namespace Poirot\HttpAgent\Browser;
 
-use Poirot\ApiClient\Interfaces\iConnection;
+use Poirot\ApiClient\Interfaces\iTransporter;
 use Poirot\ApiClient\Interfaces\iPlatform;
 use Poirot\ApiClient\Interfaces\Request\iApiMethod;
 use Poirot\ApiClient\Interfaces\Response\iResponse;
@@ -56,15 +56,16 @@ class HttpPlatform
      * - manipulate header or something in connection
      * - get connect to resource
      *
-     * @param HttpStreamTransporter|iConnection $connection
+     * @param HttpStreamTransporter|iTransporter $connection
      * @param iApiMethod|null                   $method
      *
      * @throws \Exception
      * @return HttpStreamTransporter|iHttpTransporter
      */
-    function prepareConnection(iConnection $connection, $method = null)
+    function prepareTransporter(iTransporter $connection, $method = null)
     {
         $BROWSER_OPTS = $this->browser->inOptions();
+
 
         $reConnect = false;
 
@@ -82,13 +83,15 @@ class HttpPlatform
             }
 
         # base url as connection server_url option
+        ## made absolute server url from given baseUrl, but keep original untouched
         // http://raya-media/path/to/uri --> http://raya-media/
         $absServerUrl = clone $this->browser->inOptions()->getBaseUrl();
-        ## made absolute server url from given baseUrl, but keep original untouched
-        if ($absServerUrl->getPath())
-            $absServerUrl->getPath()->reset();
 
-        if ($absServerUrl->toString() !== $connection->inOptions()->getServerUrl()) {
+        if (
+            ($connection->inOptions()->getServerUrl() === null)
+            || ($absServerUrl->toString() !== $connection->inOptions()->getServerUrl())
+        ) {
+            ($absServerUrl->getPath() === null) ?: $absServerUrl->getPath()->reset(); ### connect to host
             $connection->inOptions()->setServerUrl($absServerUrl);
             $reConnect = true;
         }
@@ -133,14 +136,15 @@ class HttpPlatform
             ## Browser specific options
             $prepConn = false;
             foreach($ReqMethod->getBrowser()->props()->readable as $prop) {
-                if ($val = $ReqMethod->getBrowser()->__get($prop)) {
+                $val = $ReqMethod->getBrowser()->__get($prop);
+                if ( $val !== null && $val !== VOID && !empty($val) ) {
                     $this->browser->inOptions()->__set($prop, $val);
                     $prepConn = true;
                 }
             }
 
             ## prepare connection again with new configs
-            (!$prepConn) ?: $this->prepareConnection($this->_connection, true);
+            (!$prepConn) ?: $this->prepareTransporter($this->_connection, true);
         }
 
         // ...
@@ -153,8 +157,11 @@ class HttpPlatform
              *   , [ 'connection' => ['time_out' => 30],
              *     // ...
              */
-            $this->browser->inOptions()->setBaseUrl($ReqMethod->getUri());
-            $this->prepareConnection($this->_connection);
+            $t_uri = $ReqMethod->getUri();
+            if ($t_uri->getHost()) {
+                $this->browser->inOptions()->setBaseUrl($t_uri);
+                $this->prepareTransporter($this->_connection);
+            }
 
             ### continue with sequence http uri
             $t_uri = ($ReqMethod->getUri()->getPath())

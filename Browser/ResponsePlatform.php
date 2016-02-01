@@ -16,7 +16,7 @@ class ResponsePlatform extends Response
      */
     function __construct(HttpResponse $response)
     {
-        $this->origin = $response;
+        $this->rawbody = $response;
 
         $this->setRawBody($response->getBody());
 
@@ -41,7 +41,7 @@ class ResponsePlatform extends Response
      */
     function setRawBody($content)
     {
-        $this->origin->setBody($content);
+        $this->rawbody->setBody($content);
         return $this;
     }
 
@@ -52,7 +52,7 @@ class ResponsePlatform extends Response
      */
     function getRawBody()
     {
-        return $this->origin->getBody();
+        return $this->rawbody->getBody();
     }
 
 

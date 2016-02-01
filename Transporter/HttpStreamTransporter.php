@@ -1,7 +1,7 @@
 <?php
 namespace Poirot\HttpAgent\Transporter;
 
-use Poirot\ApiClient\AbstractConnection;
+use Poirot\ApiClient\AbstractTransporter;
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
@@ -36,7 +36,7 @@ kd($response->toString());
 
 // TODO build AbstractTransporter Class
 
-class HttpStreamTransporter extends AbstractConnection
+class HttpStreamTransporter extends AbstractTransporter
     implements iHttpTransporter
 {
     /** @var Streamable When Connected */

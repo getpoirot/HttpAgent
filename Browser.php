@@ -2,7 +2,7 @@
 namespace Poirot\HttpAgent;
 
 use Poirot\ApiClient\AbstractClient;
-use Poirot\ApiClient\Interfaces\iConnection;
+use Poirot\ApiClient\Interfaces\iTransporter;
 use Poirot\ApiClient\Interfaces\Request\iApiMethod;
 use Poirot\Core\AbstractOptions;
 use Poirot\Core\Interfaces\iDataSetConveyor;
@@ -75,7 +75,7 @@ class Browser extends AbstractClient
 {
     use CloneTrait;
 
-    /** @var HttpStreamTransporter|iConnection*/
+    /** @var HttpStreamTransporter|iTransporter*/
     protected $connection;
     /** @var HttpPlatform */
     protected $platform;
@@ -127,7 +127,7 @@ class Browser extends AbstractClient
      *
      * @return HttpStreamTransporter
      */
-    function connection()
+    function transporter()
     {
         if (!$this->connection)
             $this->connection = new HttpStreamTransporter;
