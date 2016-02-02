@@ -16,18 +16,24 @@ class HttpTransporterOptions extends HttpSocketOptions
     protected $allowedDecoding = true;
 
     /**
+     * @override can give uri objects
+     *
      * Server Url That we Will Connect To
      * @param iHttpUri|UriInterface|string $serverUrl
      * @return $this
      */
     public function setServerUrl($serverUrl)
     {
-        if (is_string($serverUrl))
-            $serverUrl = new HttpUri($serverUrl);
-        elseif ($serverUrl instanceof UriInterface)
+        if ($serverUrl instanceof UriInterface)
             $serverUrl = new HttpUri($serverUrl);
 
-        if (!$serverUrl instanceof iHttpUri)
+        if ($serverUrl instanceof iHttpUri)
+            $serverUrl->toString();
+
+        if (is_object($serverUrl))
+            $serverUrl = (string) $serverUrl;
+
+        if (!is_string($serverUrl))
             throw new \InvalidArgumentException(sprintf(
                 'Server Url must instance of iHttpUri, UriInterface or string representing url address. given: "%s".'
                 , \Poirot\Core\flatten($serverUrl)
@@ -36,14 +42,6 @@ class HttpTransporterOptions extends HttpSocketOptions
         $this->serverUrl = $serverUrl;
 
         return $this;
-    }
-
-    /**
-     * @return iHttpUri
-     */
-    public function getServerUrl()
-    {
-        return $this->serverUrl;
     }
 
 

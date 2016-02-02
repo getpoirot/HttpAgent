@@ -3,6 +3,7 @@ namespace Poirot\HttpAgent\Transporter;
 
 use Poirot\ApiClient\AbstractTransporter;
 use Poirot\ApiClient\Exception\ApiCallException;
+use Poirot\ApiClient\Transporter\HttpSocketConnection;
 use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpRequest;
@@ -37,7 +38,7 @@ kd($response->toString());
 // TODO extend from ApiClient\HttpSocketConnection
 // TODO Abstract HttpAgent Transporter
 
-class HttpSocketTransporter extends AbstractTransporter
+class HttpSocketTransporter extends HttpSocketConnection
     implements iHttpTransporter
 {
     /** @var Streamable When Connected */
@@ -71,60 +72,6 @@ class HttpSocketTransporter extends AbstractTransporter
     {
         parent::__construct($options);
         $this->__attachDefaultListeners();
-    }
-
-    /**
-     * Get Prepared Resource Connection
-     *
-     * - prepare resource with options
-     *
-     * @throws \Exception
-     * @return mixed Connection Resource
-     */
-    function getConnect()
-    {
-        if ($this->isConnected())
-            ## close current connection if connected
-            $this->close();
-
-
-        $streamClient = new StreamClient;
-
-        # apply options to resource
-        ## options will not take an affect after connect
-        $this->connected_options = clone $this->inOptions();
-
-        ## determine protocol
-        // TODO ssl connection with context bind
-        if (
-            !$this->inOptions()->__isset('server_url')
-            || ! ($serverUrl = clone $this->inOptions()->getServerUrl())
-        )
-            throw new \RuntimeException('Server Url is Mandatory For Connect.');
-
-        $serverUrl->setScheme('tcp');
-        if (!$serverUrl->getPort())
-            $serverUrl->setPort(80);
-
-        $streamClient->setSocketUri($serverUrl->toString());
-
-        ### options
-        $streamClient->setPersist($this->inOptions()->getPersist());
-        $streamClient->setTimeout($this->inOptions()->getTimeout());
-
-        try{
-            $resource = $streamClient->getConnect();
-        } catch(\Exception $e)
-        {
-            throw new \Exception(sprintf(
-                'Cannot connect to (%s).'
-                , $this->inOptions()->getServerUrl()->toString()
-                , $e->getCode()
-                , $e ## as previous exception
-            ));
-        }
-
-        return $this->streamable = new Streamable($resource);
     }
 
     /**

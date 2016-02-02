@@ -177,7 +177,10 @@ class HttpPlatform
         $REQUEST = $this->__getRequestObject();
 
         $REQUEST->setMethod($ReqMethod->getMethod());
-        $REQUEST->setHost($this->_connection->inOptions()->getServerUrl()->getHost());
+
+        $serverUrl = $this->_connection->inOptions()->getServerUrl();
+        $serverUrl = new HttpUri($serverUrl);
+        $REQUEST->setHost($serverUrl->getHost());
 
         ## req Headers ------------------------------------------------------------------\
         ### default headers
