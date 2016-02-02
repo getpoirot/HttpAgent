@@ -4,13 +4,13 @@ namespace Poirot\HttpAgent\Transporter\Listeners;
 use Poirot\Events\Listener\AbstractListener;
 use Poirot\Http\Header\HeaderFactory;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
-use Poirot\HttpAgent\Transporter\HttpStreamTransporter;
+use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
 use Poirot\Stream\Interfaces\iStreamable;
 
 class onRequestPrepareSend extends AbstractListener
 {
     /**
-     * @param HttpStreamTransporter $transporter
+     * @param HttpSocketTransporter $transporter
      * @param iHttpRequest          $request
      *
      * @return mixed

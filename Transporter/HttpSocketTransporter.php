@@ -23,8 +23,8 @@ $request = (new HttpRequest(['method' => 'GET', 'host' => 'raya-media.com', 'hea
     'Accept-Encoding' => 'gzip, deflate, sdch',
 ]]))->toString();
 
-$stream = new StreamHttpTransporter(
-    StreamHttpTransporter::optionsIns()
+$stream = new HttpSocketTransporter(
+    HttpSocketTransporter::optionsIns()
         ->setServerUrl('http://www.raya-media.com/')
         ->setTimeout(30)
         ->setPersistent(true)
@@ -36,7 +36,7 @@ kd($response->toString());
 
 // TODO build AbstractTransporter Class
 
-class HttpStreamTransporter extends AbstractTransporter
+class HttpSocketTransporter extends AbstractTransporter
     implements iHttpTransporter
 {
     /** @var Streamable When Connected */

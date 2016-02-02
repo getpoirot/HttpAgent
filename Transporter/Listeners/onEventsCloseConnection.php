@@ -3,12 +3,12 @@ namespace Poirot\HttpAgent\Transporter\Listeners;
 
 use Poirot\Events\Listener\AbstractListener;
 use Poirot\Http\Message\HttpResponse;
-use Poirot\HttpAgent\Transporter\HttpStreamTransporter;
+use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
 
 class onEventsCloseConnection extends AbstractListener
 {
     /**
-     * @param HttpStreamTransporter $transporter
+     * @param HttpSocketTransporter $transporter
      * @param HttpResponse          $response
      * @param null                  $continue
      *                              From Events To Tell Just Continue With Body
