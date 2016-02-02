@@ -206,7 +206,7 @@ class HttpSocketTransporter extends AbstractTransporter
 
             # send request body
             $body = $expr->getBody();
-            if ($body !== null) {
+            if ($body !== null && $body != '') {
                 if (is_string($body))
                     $body = new Streamable\TemporaryStream($body);
                 $body->pipeTo($stream);
