@@ -35,8 +35,9 @@ class onRequestPrepareSend extends AbstractListener
                 $length = strlen($body);
         }
 
-        ($length === false) ?: $request->getHeaders()->set(HeaderFactory::factory('Content-Length', (string) $length));
-
-
+        if ($length !== false) {
+            if (!$request->getHeaders()->has('Content-Length'))
+            $request->getHeaders()->set(HeaderFactory::factory('Content-Length', (string) $length));
+        }
     }
 }

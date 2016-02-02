@@ -188,6 +188,10 @@ class HttpPlatform
         $reqHeaders->set(HeaderFactory::factory('Accept'
             , 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
         ));
+        $reqHeaders->set(HeaderFactory::factory('Cache-Control'
+            , 'no-cache'
+        ));
+
 
         /*if ($this->browser->inOptions()->getConnection())
             (!$this->browser->inOptions()->getConnection()->isAllowDecoding())

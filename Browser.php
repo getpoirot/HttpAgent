@@ -249,7 +249,7 @@ class Browser extends AbstractClient
     function request(HttpRequest $request, $options = null)
     {
         $uri = $request->getUri();
-        return $this->__makeRequestCall($request->getMethod(), $uri, $options, null, $request->getHeaders());
+        return $this->__makeRequestCall($request->getMethod(), $uri, $options, $request->getBody(), $request->getHeaders());
     }
 
     /**
