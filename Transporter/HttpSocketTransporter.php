@@ -108,7 +108,7 @@ class HttpSocketTransporter extends AbstractTransporter
         $streamClient->setSocketUri($serverUrl->toString());
 
         ### options
-        $streamClient->setPersistent($this->inOptions()->getPersist());
+        $streamClient->setPersist($this->inOptions()->getPersist());
         $streamClient->setTimeout($this->inOptions()->getTimeout());
 
         try{
