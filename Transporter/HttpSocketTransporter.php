@@ -34,7 +34,7 @@ $response = $stream->send($request);
 kd($response->toString());
 */
 
-// TODO build AbstractTransporter Class
+// TODO extend from ApiClient\HttpSocketConnection
 
 class HttpSocketTransporter extends AbstractTransporter
     implements iHttpTransporter
