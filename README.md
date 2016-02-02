@@ -34,3 +34,18 @@ $browser->GET('/api/v1/users/me', null, [
     $response->flush(false);
 });
 ```
+
+```php
+$request =
+        "GET /payam/ HTTP/1.1\r\n"
+        ."Host: 95.211.189.240\r\n"
+        ."User-Agent: AranRojan-PHP/5.5.9-1ubuntu4.11\r\n"
+        ."Accept-Encoding: gzip\r\n"
+        ."Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n"
+        ."Cache-Control: no-cache"
+    ;
+    $browser = new Browser('http://95.211.189.240/', ['connection' => ['allow_decoding' => false]]);
+    $res = $browser->request(new HttpRequest($request));
+
+    echo ($res->getRawBody()->read());
+```
