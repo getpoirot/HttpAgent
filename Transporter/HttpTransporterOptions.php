@@ -1,20 +1,16 @@
 <?php
 namespace Poirot\HttpAgent\Transporter;
 
+use Poirot\ApiClient\Transporter\HttpSocketOptions;
 use Poirot\Core\AbstractOptions;
 use Poirot\Core\Traits\CloneTrait;
 use Poirot\PathUri\HttpUri;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\Psr\UriInterface;
 
-class HttpTransporterOptions extends AbstractOptions
+class HttpTransporterOptions extends HttpSocketOptions
 {
     use CloneTrait;
-
-    protected $serverUrl;
-
-    protected $timeout = 20;
-    protected $persist = false;
 
     /** @var bool Http Transporter Allowed To Decode Body Response */
     protected $allowedDecoding = true;
@@ -50,44 +46,8 @@ class HttpTransporterOptions extends AbstractOptions
         return $this->serverUrl;
     }
 
-    /**
-     * @param mixed $timeout
-     * @return $this
-     */
-    public function setTimeout($timeout)
-    {
-        $this->timeout = (int) $timeout;
-        return $this;
-    }
 
-    /**
-     * @return int
-     */
-    public function getTimeout()
-    {
-        return $this->timeout;
-    }
-
-    /**
-     * @param mixed $persist
-     * @return $this
-     */
-    public function setPersist($persist)
-    {
-        $this->persist = (bool) $persist;
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getPersist()
-    {
-        return $this->persist;
-    }
-
-
-    // ...
+    // ... TODO move outside
 
     /**
      * note: some times we need raw body from response

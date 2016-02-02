@@ -35,6 +35,7 @@ kd($response->toString());
 */
 
 // TODO extend from ApiClient\HttpSocketConnection
+// TODO Abstract HttpAgent Transporter
 
 class HttpSocketTransporter extends AbstractTransporter
     implements iHttpTransporter
@@ -401,7 +402,7 @@ class HttpSocketTransporter extends AbstractTransporter
     }
 
 
-    // ...
+    // ... TODO some move outside
 
     protected function __attachDefaultListeners()
     {
