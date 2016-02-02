@@ -11,6 +11,7 @@ use Poirot\Container\Interfaces\Plugins\iPluginManagerProvider;
 use Poirot\Container\Plugins\AbstractPlugins;
 use Poirot\Container\Plugins\PluginsInvokable;
 use Poirot\Http\Header\HeaderFactory;
+use Poirot\Http\Interfaces\iHeader;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
 use Poirot\HttpAgent\Browser;
@@ -200,8 +201,13 @@ class HttpPlatform
 
         ### headers as request method options
         if ($ReqMethod->getHeaders()) {
-            foreach($ReqMethod->getHeaders() as $h)
+            /** @var iHeader $h */
+            foreach($ReqMethod->getHeaders() as $h) {
+                if ($reqHeaders->has($h->getLabel()))
+                    $reqHeaders = $reqHeaders->del($h->getLabel());
+
                 $reqHeaders->set($h);
+            }
         }
 
         ## req Uri ----------------------------------------------------------------------\
