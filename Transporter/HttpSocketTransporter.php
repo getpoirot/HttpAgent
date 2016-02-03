@@ -184,7 +184,8 @@ class HttpSocketTransporter extends HttpSocketConnection
                 'request'     => $request,
             ]);
 
-            $continue->isDone = $emitter->collector()->getContinue();
+            ## consider terminate receive body
+            $continue->isDone = !$emitter->collector()->getContinue();
             return $response;
         });
 
