@@ -100,9 +100,13 @@ class BrowserOptions extends OpenOptions
         if (!$connection instanceof HttpTransporterOptions && $connection !== null)
             $connection = new HttpTransporterOptions($connection);
 
-        foreach($connection->props()->readable as $prop)
-            if (($val = $connection->__get($prop)) !== null)
-                $tConnection->__set($prop, $val);
+        foreach($connection->props()->readable as $prop) {
+            $val = $connection->__get($prop);
+            if ($val === null)
+                continue;
+
+            $tConnection->__set($prop, $val);
+        }
 
         $this->connection = $tConnection;
         return $this;

@@ -25,13 +25,14 @@ class onResponseBodyReceived extends AbstractListener
     {
         $headers = $response->getHeaders();
 
-
         // Decoding Data:
 
         if (!$transporter->inOptions()->isAllowDecoding())
             ## do not decode body using raw data
             return;
 
+        if (!$body)
+            return ['body' => $body];
 
         if ($headers->has('Content-Encoding')
             && strstr(strtolower($headers->get('Content-Encoding')->renderValueLine()), 'gzip') !== false
