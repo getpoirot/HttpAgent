@@ -76,7 +76,7 @@ class Browser extends AbstractClient
     use CloneTrait;
 
     /** @var HttpSocketTransporter|iTransporter*/
-    protected $connection;
+    protected $transporter;
     /** @var HttpPlatform */
     protected $platform;
 
@@ -129,10 +129,12 @@ class Browser extends AbstractClient
      */
     function transporter()
     {
-        if (!$this->connection)
-            $this->connection = new HttpSocketTransporter;
+        if (!$this->transporter) {
+            $this->transporter = new HttpSocketTransporter;
+            $this->transporter->inOptions()->from($this->inOptions()->getConnection());
+        }
 
-        return $this->connection;
+        return $this->transporter;
     }
 
 
