@@ -67,18 +67,24 @@ class HttpPlatform
     {
         $BROWSER_OPTS = $this->browser->inOptions();
 
-
         $reConnect = false;
 
         # check if we have something changed in connection options
-        if ($conOptions = $BROWSER_OPTS->getConnection())
-            foreach($conOptions->props()->readable as $prop) {
+        if ($BRW_ConOpts = $BROWSER_OPTS->getConnection())
+            foreach($BRW_ConOpts->props()->readable as $prop) {
                 if (
-                    ## not has new option or it may changed
-                    !$connection->inOptions()->__isset($prop)
-                    || ($connection->inOptions()->__get($prop) !== ($val = $conOptions->__get($prop))) && $val !== null
+                    $BRW_ConOpts->__isset($prop)
+                    && ### option property must be set and available
+                    ### not has new option or it may changed
+                    (
+                        !$connection->inOptions()->__isset($prop)
+                        || ( $connection->inOptions()->__isset($prop)
+                             && ### property exists but maybe with diffrent value
+                            $connection->inOptions()->__get($prop) !== $BRW_ConOpts->__get($prop)
+                        )
+                    )
                 ) {
-                    $connection->inOptions()->__set($prop, $conOptions->__get($prop));
+                    $connection->inOptions()->__set($prop, $BRW_ConOpts->__get($prop));
                     $reConnect = true;
                 }
             }
@@ -86,11 +92,18 @@ class HttpPlatform
         # base url as connection server_url option
         ## made absolute server url from given baseUrl, but keep original untouched
         // http://raya-media/path/to/uri --> http://raya-media/
-        $absServerUrl = clone $this->browser->inOptions()->getBaseUrl();
+        $absServerUrl = new HttpUri();
+        if ($BROWSER_OPTS->__isset('base_url')) {
+            $absServerUrl->from($BROWSER_OPTS->getBaseUrl());
+        }
 
         if (
-            ($connection->inOptions()->getServerUrl() === null)
-            || ($absServerUrl->toString() !== $connection->inOptions()->getServerUrl())
+            (!$connection->inOptions()->__isset('server_url'))
+            || (
+                $connection->inOptions()->__isset('server_url')
+                &&
+                $absServerUrl->toString() !== $connection->inOptions()->getServerUrl()
+            )
         ) {
             ($absServerUrl->getPath() === null) ?: $absServerUrl->getPath()->reset(); ### connect to host
             $connection->inOptions()->setServerUrl($absServerUrl);
@@ -118,7 +131,7 @@ class HttpPlatform
     {
         ## make a copy of browser when making changes on it by ReqMethod
         ### with bind browser options
-        $CUR_BROWSER = $this->browser;
+        $CUR_BROWSER   = $this->browser;
         $this->browser = clone $CUR_BROWSER;
 
 
@@ -137,9 +150,8 @@ class HttpPlatform
             ## Browser specific options
             $prepConn = false;
             foreach($ReqMethod->getBrowser()->props()->readable as $prop) {
-                $val = $ReqMethod->getBrowser()->__get($prop);
-                if ( $val !== null && $val !== VOID && !empty($val) ) {
-                    $this->browser->inOptions()->__set($prop, $val);
+                if ( $ReqMethod->getBrowser()->__isset($prop) ) {
+                    $this->browser->inOptions()->__set($prop, $ReqMethod->getBrowser()->__get($prop));
                     $prepConn = true;
                 }
             }
@@ -185,16 +197,18 @@ class HttpPlatform
         ## req Headers ------------------------------------------------------------------\
         ### default headers
         $reqHeaders = $REQUEST->getHeaders();
-        $reqHeaders->set(HeaderFactory::factory('User-Agent'
-            , $this->browser->inOptions()->getUserAgent()
-        ));
+
+        if ($this->browser->inOptions()->__isset('user_agent'))
+            $reqHeaders->set(HeaderFactory::factory('User-Agent'
+                , $this->browser->inOptions()->getUserAgent()
+            ));
+
         $reqHeaders->set(HeaderFactory::factory('Accept'
             , 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
         ));
         $reqHeaders->set(HeaderFactory::factory('Cache-Control'
             , 'no-cache'
         ));
-
 
         /*if ($this->browser->inOptions()->getConnection())
             (!$this->browser->inOptions()->getConnection()->isAllowDecoding())
@@ -218,14 +232,16 @@ class HttpPlatform
         }
 
         ## req Uri ----------------------------------------------------------------------\
-        $baseUrl   = $this->browser->inOptions()->getBaseUrl()->getPath();
-        if (!$baseUrl)
-            $baseUrl = new SeqPathJoinUri('/');
-        $targetUri = $baseUrl->merge($ReqMethod->getUri()); ### merge with request base url path
+        if ($this->browser->inOptions()->__isset('base_url'))
+            $basePath   = $this->browser->inOptions()->getBaseUrl()->getPath();
+        else
+            $basePath = new SeqPathJoinUri('/');
+
+        $targetUri = $basePath->merge($ReqMethod->getUri()); ### merge with request base url path
         $REQUEST->getUri()->setPath($targetUri);
 
         ### remove unnecessary iHttpUri parts such as port, host, ...
-        ### its presented as host and etc. on Request Message Obect
+        ### its presented as host and etc. on Request Message Object
         $uri = new HttpUri([
             'path'     => $REQUEST->getUri()->getPath(),
             'query'    => $REQUEST->getUri()->getQuery(),

@@ -17,9 +17,10 @@ class HttpTransporterOptions extends HttpSocketOptions
 
     /**
      * @override can give uri objects
-     *
      * Server Url That we Will Connect To
+     *
      * @param iHttpUri|UriInterface|string $serverUrl
+     *
      * @return $this
      */
     public function setServerUrl($serverUrl)
@@ -40,7 +41,6 @@ class HttpTransporterOptions extends HttpSocketOptions
             ));
 
         $this->serverUrl = $serverUrl;
-
         return $this;
     }
 

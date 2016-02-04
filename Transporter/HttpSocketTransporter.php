@@ -153,9 +153,9 @@ class HttpSocketTransporter extends HttpSocketConnection
      * @override
      * @return HttpTransporterOptions
      */
-    static function newOptions()
+    static function newOptions($builder = null)
     {
-        return new HttpTransporterOptions;
+        return new HttpTransporterOptions($builder);
     }
 
 

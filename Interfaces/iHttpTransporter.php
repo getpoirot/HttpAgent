@@ -3,6 +3,7 @@ namespace Poirot\HttpAgent\Interfaces;
 
 use Poirot\ApiClient\Exception\ApiCallException;
 use Poirot\ApiClient\Interfaces\iTransporter;
+use Poirot\Core\Interfaces\iOptionsProvider;
 use Poirot\Events\Interfaces\Respec\iEventProvider;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpResponse;
@@ -62,11 +63,11 @@ interface iHttpTransporter
      * @override just for ide completion
      * @return HttpTransporterOptions
      */
-    function inOptions();
+    // function inOptions();
 
     /**
      * @override
      * @return HttpTransporterOptions
      */
-    static function newOptions();
+    // static function newOptions($builder = null);
 }

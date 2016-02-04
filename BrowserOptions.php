@@ -18,11 +18,13 @@ class BrowserOptions extends OpenOptions
     use CloneTrait;
 
     /** @var string|iHttpUri|UriInterface Base Url to Server */
-    protected $baseUrl;
-    protected $userAgent;
+    protected $baseUrl    = VOID;
+    protected $userAgent  = VOID;
 
     # default element options
+    /** @var HttpTransporterOptions */
     protected $connection;
+    /** @var BrowserRequestOptions */
     protected $request;
 
 
@@ -46,7 +48,7 @@ class BrowserOptions extends OpenOptions
     }
 
     /**
-     * @return iHttpUri
+     * @return iHttpUri|VOID
      */
     public function getBaseUrl()
     {
@@ -68,7 +70,7 @@ class BrowserOptions extends OpenOptions
      */
     public function getUserAgent()
     {
-        if (!$this->userAgent) {
+        if (!$this->userAgent || $this->userAgent === VOID) {
             $userAgent = '';
 
             if (!$userAgent) {
@@ -93,30 +95,19 @@ class BrowserOptions extends OpenOptions
      */
     public function setConnection($connection)
     {
-        /** ALWAYS KEEP LAST VALUES AND NOT REPLACE WHOLE */
-
-        $tConnection = ($this->connection) ? $this->connection : new HttpTransporterOptions;
-
-        if (!$connection instanceof HttpTransporterOptions && $connection !== null)
-            $connection = new HttpTransporterOptions($connection);
-
-        foreach($connection->props()->readable as $prop) {
-            $val = $connection->__get($prop);
-            if ($val === null)
-                continue;
-
-            $tConnection->__set($prop, $val);
-        }
-
-        $this->connection = $tConnection;
+        // TODO catch exception for bright exception message
+        $this->getConnection()->from($connection);
         return $this;
     }
 
     /**
-     * @return null|HttpTransporterOptions
+     * @return HttpTransporterOptions
      */
     public function getConnection()
     {
+        if (!$this->connection || $this->connection === VOID)
+            $this->connection = new HttpTransporterOptions;
+
         return $this->connection;
     }
 
@@ -127,20 +118,8 @@ class BrowserOptions extends OpenOptions
      */
     public function setRequest($request)
     {
-        /** ALWAYS KEEP LAST VALUES AND NOT REPLACE WHOLE */
-
-        $tRequest = ($this->request) ? $this->request : new BrowserRequestOptions;
-
-        if (!$request instanceof BrowserRequestOptions && $request !== null)
-            $request = new BrowserRequestOptions($request);
-
-        foreach($request->props()->readable as $prop) {
-            if (($val = $request->__get($prop)) !== null) {
-                $tRequest->__set($prop, $val);
-            }
-        }
-
-        $this->request = $tRequest;
+        // TODO catch exception for bright exception message
+        $this->getRequest()->from($request);
         return $this;
     }
 
@@ -149,7 +128,7 @@ class BrowserOptions extends OpenOptions
      */
     public function getRequest()
     {
-        if (!$this->request)
+        if (!$this->request || $this->request === VOID)
             $this->request = new BrowserRequestOptions;
 
         return $this->request;

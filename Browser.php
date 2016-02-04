@@ -129,10 +129,8 @@ class Browser extends AbstractClient
      */
     function transporter()
     {
-        if (!$this->transporter) {
-            $this->transporter = new HttpSocketTransporter;
-            $this->transporter->inOptions()->from($this->inOptions()->getConnection());
-        }
+        if (!$this->transporter)
+            $this->transporter = new HttpSocketTransporter($this->inOptions()->getConnection());
 
         return $this->transporter;
     }
@@ -304,11 +302,13 @@ class Browser extends AbstractClient
      *      $class = new Filesystem($opt);
      *   [/php]
      *
+     * @param null|mixed $builder Builder Options as Constructor
+     *
      * @return BrowserOptions
      */
-    static function newOptions()
+    static function newOptions($builder = null)
     {
-        return new BrowserOptions;
+        return new BrowserOptions($builder);
     }
 
 
