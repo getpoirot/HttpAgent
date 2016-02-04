@@ -2,6 +2,7 @@
 namespace Poirot\HttpAgent\Interfaces;
 
 use Poirot\ApiClient\Exception\ApiCallException;
+use Poirot\ApiClient\Exception\ConnectException;
 use Poirot\ApiClient\Interfaces\iTransporter;
 use Poirot\Core\Interfaces\iOptionsProvider;
 use Poirot\Events\Interfaces\Respec\iEventProvider;
@@ -20,11 +21,12 @@ interface iHttpTransporter
      *
      * - send expression to server through connection
      *   resource
-     * - get connect if connection not stablished yet
+     *
+     * !! it must be connected
      *
      * @param iHttpRequest|RequestInterface|string $expr Expression
      *
-     * @throws ApiCallException
+     * @throws ApiCallException|ConnectException
      * @return HttpResponse Prepared Server Response
      */
     function send($expr);
