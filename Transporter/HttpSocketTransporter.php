@@ -163,7 +163,7 @@ class HttpSocketTransporter extends HttpSocketConnection
 
     protected function __attachDefaultListeners()
     {
-        $this->onEvent(self::EVENT_REQUEST_SEND_PREPARE, function($httpRequest) {
+        $this->onEvent(self::EVENT_REQUEST_SEND_PREPARE, function(&$httpRequest) {
             $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_REQUEST_SEND_PREPARE, [
                 'request'     => $httpRequest,
                 'transporter' => $this,
@@ -173,22 +173,22 @@ class HttpSocketTransporter extends HttpSocketConnection
             return $httpRequest = $emitter->collector()->getRequest();
         });
 
-        $this->onEvent(self::EVENT_RESPONSE_RECEIVED_HEADER, function($responseHeaders, $requestStd, $continue) {
-            $response = new HttpResponse($responseHeaders);
-            $request  = new HttpRequest($requestStd->headers);
+        $this->onEvent(self::EVENT_RESPONSE_RECEIVED_HEADER, function(&$responseHeaders, $requestStd, $continue) {
+            $responseHeaders = new HttpResponse($responseHeaders);
+            $requestStd->headers  = new HttpRequest($requestStd->headers);
             $emitter  = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, [
-                'response'    => $response,
+                'response'    => $responseHeaders,
                 'transporter' => $this,
-                'request'     => $request,
+                'request'     => $requestStd->headers,
             ]);
 
             ## consider terminate receive body
             $continue->isDone = !$emitter->collector()->getContinue();
-            return $response;
+            return $responseHeaders;
         });
 
-        $this->onEvent(self::EVENT_RESPONSE_RECEIVED_COMPLETE, function($responseHeaders, $body, $requestStd) {
-            $request  = new HttpRequest($requestStd->headers);
+        $this->onEvent(self::EVENT_RESPONSE_RECEIVED_COMPLETE, function(&$responseHeaders, &$body, $requestStd) {
+            $request  = $requestStd->headers;
             $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED, [
                 'response'    => $responseHeaders,
                 'transporter' => $this,
