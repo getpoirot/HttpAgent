@@ -163,21 +163,19 @@ class HttpSocketTransporter extends HttpSocketConnection
 
     protected function __attachDefaultListeners()
     {
-        $this->onRequestSendPrepare()->addMethod('triggerEvents', function($expr)
-        {
+        $this->onEvent(self::EVENT_REQUEST_SEND_PREPARE, function($httpRequest) {
             $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_REQUEST_SEND_PREPARE, [
-                'request'     => $expr,
+                'request'     => $httpRequest,
                 'transporter' => $this,
             ]);
 
             /** @var iHttpRequest $expr */
-            return $expr = $emitter->collector()->getRequest();
+            return $httpRequest = $emitter->collector()->getRequest();
         });
 
-        $this->onResponseHeaderReceived()->addMethod('triggerEvents', function($headers, $expr, $continue)
-        {
-            $response = new HttpResponse($headers);
-            $request  = new HttpRequest($expr->headers);
+        $this->onEvent(self::EVENT_RESPONSE_RECEIVED_HEADER, function($responseHeaders, $requestStd, $continue) {
+            $response = new HttpResponse($responseHeaders);
+            $request  = new HttpRequest($requestStd->headers);
             $emitter  = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, [
                 'response'    => $response,
                 'transporter' => $this,
@@ -189,11 +187,10 @@ class HttpSocketTransporter extends HttpSocketConnection
             return $response;
         });
 
-        $this->onResponseReceived()->addMethod('triggerEvents', function($response, $body, $expr)
-        {
-            $request  = new HttpRequest($expr->headers);
+        $this->onEvent(self::EVENT_RESPONSE_RECEIVED_COMPLETE, function($responseHeaders, $body, $requestStd) {
+            $request  = new HttpRequest($requestStd->headers);
             $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED, [
-                'response'    => $response,
+                'response'    => $responseHeaders,
                 'transporter' => $this,
 
                 'body'        => $body,
@@ -203,9 +200,9 @@ class HttpSocketTransporter extends HttpSocketConnection
             ]);
 
             $bodyStream = $emitter->collector()->getBody();
-            $response->setBody($bodyStream);
+            $responseHeaders->setBody($bodyStream);
 
-            return $response;
+            return $responseHeaders;
         });
 
 
