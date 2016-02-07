@@ -36,7 +36,6 @@ $response = $stream->send($request);
 kd($response->toString());
 */
 
-// TODO extend from ApiClient\HttpSocketConnection
 // TODO Abstract HttpAgent Transporter
 
 class HttpSocketTransporter extends HttpSocketConnection
@@ -76,23 +75,76 @@ class HttpSocketTransporter extends HttpSocketConnection
     }
 
     /**
-     * Send Request To Server
-     *
-     * @param string|iHttpRequest|RequestInterface $expr
-     * @return HttpResponse
-     * @throws \Exception
+     * Before Send Prepare Expression
+     * @param mixed $expr
+     * @return iStreamable|string
      */
-    protected function doHandleRequest($expr)
+    function onBeforeSendPrepareExpression($expr)
     {
-        if ($expr instanceof RequestInterface)
+        if ($expr instanceof RequestInterface || is_string($expr))
             ## convert PSR request to Poirot
             $expr = new HttpRequest($expr);
 
-        if ($expr instanceof iHttpRequest)
-            $expr = $expr->toString();
+        if (!$expr instanceof iHttpRequest)
+            throw new \InvalidArgumentException(sprintf(
+                'Request Expression must be string, iHttpRequest or RequestInterface. given: (%s).'
+                , \Poirot\Core\flatten($expr)
+            ));
 
 
-        return parent::doHandleRequest($expr);
+        // ...
+
+        ## handle prepare request headers event
+        $httpRequest = $expr;
+        $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_REQUEST_SEND_PREPARE, [
+            'request'     => $httpRequest,
+            'transporter' => $this,
+        ]);
+        /** @var iHttpRequest $expr */
+        $expr = $httpRequest = $emitter->collector()->getRequest();
+
+
+        if ($httpRequest instanceof iHttpRequest)
+        {
+            # ! # support for large body streams
+
+            /** @var Streamable\AggregateStream $expr */
+            $expr = new Streamable\AggregateStream;
+
+            $expr->addStream(new Streamable\TemporaryStream($httpRequest->renderHeaders()));
+
+            $body = $httpRequest->getBody();
+            if (!$body instanceof iStreamable)
+                $body = new Streamable\TemporaryStream($body);
+
+            $expr->addStream($body);
+        }
+
+        return $expr;
+    }
+
+    /**
+     * $responseHeaders can be changed by reference
+     *
+     * @param string $responseHeaders
+     *
+     * @return boolean consider continue with reading body from stream?
+     */
+    function onResponseHeaderReceived(&$responseHeaders)
+    {
+        kd($responseHeaders);
+
+        $responseHeaders = new HttpResponse($responseHeaders);
+        $requestStd->headers  = new HttpRequest($requestStd->headers);
+        $emitter  = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, [
+            'response'    => $responseHeaders,
+            'transporter' => $this,
+            'request'     => $requestStd->headers,
+        ]);
+
+        ## consider terminate receive body
+        $continue->isDone = !$emitter->collector()->getContinue();
+        return $responseHeaders;
     }
 
     /**
@@ -163,30 +215,6 @@ class HttpSocketTransporter extends HttpSocketConnection
 
     protected function __attachDefaultListeners()
     {
-        $this->onEvent(self::EVENT_REQUEST_SEND_PREPARE, function(&$httpRequest) {
-            $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_REQUEST_SEND_PREPARE, [
-                'request'     => $httpRequest,
-                'transporter' => $this,
-            ]);
-
-            /** @var iHttpRequest $expr */
-            return $httpRequest = $emitter->collector()->getRequest();
-        });
-
-        $this->onEvent(self::EVENT_RESPONSE_RECEIVED_HEADER, function(&$responseHeaders, $requestStd, $continue) {
-            $responseHeaders = new HttpResponse($responseHeaders);
-            $requestStd->headers  = new HttpRequest($requestStd->headers);
-            $emitter  = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, [
-                'response'    => $responseHeaders,
-                'transporter' => $this,
-                'request'     => $requestStd->headers,
-            ]);
-
-            ## consider terminate receive body
-            $continue->isDone = !$emitter->collector()->getContinue();
-            return $responseHeaders;
-        });
-
         $this->onEvent(self::EVENT_RESPONSE_RECEIVED_COMPLETE, 'getResult' /* override default */
             , function(&$responseHeaders, &$body, $requestStd) {
                 $request  = $requestStd->headers;
