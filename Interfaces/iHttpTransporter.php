@@ -19,8 +19,11 @@ interface iHttpTransporter
     /**
      * Send Expression To Server
      *
-     * - send expression to server through connection
+     * - send expression to server through transporter
      *   resource
+     *
+     * - don't set request globally through request() if
+     *   expr set
      *
      * !! it must be connected
      *
@@ -29,7 +32,23 @@ interface iHttpTransporter
      * @throws ApiCallException|ConnectException
      * @return HttpResponse Prepared Server Response
      */
-    function send($expr);
+    function send($expr = null);
+
+    /**
+     * Set Request Expression To Send Over Wire
+     *
+     * @param iHttpRequest|RequestInterface|string $expr
+     *
+     * @return $this
+     */
+    function request($expr);
+
+    /**
+     * Get Latest Request
+     *
+     * @return null|iHttpRequest|RequestInterface|string
+     */
+    function getRequest();
 
     /**
      * Is Request Complete
@@ -40,15 +59,6 @@ interface iHttpTransporter
      * @return bool
      */
     function isRequestComplete();
-
-    /**
-     * Reset Response Data
-     *
-     * - clear current data gathering from server response
-     *
-     * @return $this
-     */
-    function reset();
 
     // ...
 

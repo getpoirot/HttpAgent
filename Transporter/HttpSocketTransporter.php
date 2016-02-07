@@ -103,7 +103,6 @@ class HttpSocketTransporter extends HttpSocketConnection
         /** @var iHttpRequest $expr */
         $expr = $httpRequest = $emitter->collector()->getRequest();
 
-
         if ($httpRequest instanceof iHttpRequest)
         {
             # ! # support for large body streams
@@ -111,13 +110,20 @@ class HttpSocketTransporter extends HttpSocketConnection
             /** @var Streamable\AggregateStream $expr */
             $expr = new Streamable\AggregateStream;
 
-            $expr->addStream(new Streamable\TemporaryStream($httpRequest->renderHeaders()));
+            $expr->addStream(
+                (new Streamable\TemporaryStream(
+                    $httpRequest->renderRequestLine()
+                    . $httpRequest->renderHeaders()
+                ))->rewind()
+            );
 
             $body = $httpRequest->getBody();
-            if (!$body instanceof iStreamable)
-                $body = new Streamable\TemporaryStream($body);
+            if ($body !== null || $body !== '') {
+                if (!$body instanceof iStreamable)
+                    $body = new Streamable\TemporaryStream($body);
 
-            $expr->addStream($body);
+                $expr->addStream($body->rewind());
+            }
         }
 
         return $expr;
@@ -132,18 +138,43 @@ class HttpSocketTransporter extends HttpSocketConnection
      */
     function onResponseHeaderReceived(&$responseHeaders)
     {
-        kd($responseHeaders);
-
         $responseHeaders = new HttpResponse($responseHeaders);
-        $requestStd->headers  = new HttpRequest($requestStd->headers);
         $emitter  = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, [
             'response'    => $responseHeaders,
             'transporter' => $this,
-            'request'     => $requestStd->headers,
+            'request'     => $this->getRequest(),
         ]);
 
         ## consider terminate receive body
-        $continue->isDone = !$emitter->collector()->getContinue();
+        return $emitter->collector()->getContinue();
+    }
+
+    /**
+     * Get Body And Response Headers And Return Expected Response
+     *
+     * @param string|mixed     $responseHeaders default has headers string but it can changed
+     *                                          with onResponseHeaderReceived
+     * @param iStreamable|null $body
+     *
+     * @return mixed Expected Response
+     */
+    function onResponseReceivedComplete($responseHeaders, $body)
+    {
+        /** @var HttpResponse $responseHeaders */
+
+        $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED, [
+            'response'    => $responseHeaders,
+            'transporter' => $this,
+
+            'body'        => $body,
+
+            'request'     => $this->getRequest(),
+            'continue'    => false, ## no more request by default
+        ]);
+
+        $bodyStream = $emitter->collector()->getBody();
+        $responseHeaders->setBody($bodyStream);
+
         return $responseHeaders;
     }
 
@@ -158,22 +189,6 @@ class HttpSocketTransporter extends HttpSocketConnection
     function isRequestComplete()
     {
         return $this->isRequestComplete;
-    }
-
-    /**
-     * Reset Response Data
-     *
-     * - clear current data gathering from server response
-     *
-     * @return $this
-     */
-    function reset()
-    {
-        if ($this->_buffer)
-            $this->_buffer->getResource()->close();
-
-        $this->_buffer = null;
-        return $this;
     }
 
 
@@ -215,28 +230,6 @@ class HttpSocketTransporter extends HttpSocketConnection
 
     protected function __attachDefaultListeners()
     {
-        $this->onEvent(self::EVENT_RESPONSE_RECEIVED_COMPLETE, 'getResult' /* override default */
-            , function(&$responseHeaders, &$body, $requestStd) {
-                $request  = $requestStd->headers;
-                $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED, [
-                    'response'    => $responseHeaders,
-                    'transporter' => $this,
-
-                    'body'        => $body,
-
-                    'request'     => $request,
-                    'continue'    => false, ## no more request by default
-                ]);
-
-                $bodyStream = $emitter->collector()->getBody();
-                $responseHeaders->setBody($bodyStream);
-
-                return $responseHeaders;
-            });
-
-
-        // ...
-
         $this->event()->on(
             TransporterHttpEvents::EVENT_REQUEST_SEND_PREPARE
             , new onRequestPrepareSend
