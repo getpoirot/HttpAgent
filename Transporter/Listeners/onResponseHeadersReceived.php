@@ -5,7 +5,6 @@ use Poirot\Events\Listener\AbstractListener;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
-use Poirot\Http\Plugins\Response\Status;
 use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
 use Poirot\Stream\Streamable;
 

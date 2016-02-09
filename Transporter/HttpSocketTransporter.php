@@ -1,9 +1,7 @@
 <?php
 namespace Poirot\HttpAgent\Transporter;
 
-use Poirot\ApiClient\AbstractTransporter;
-use Poirot\ApiClient\Exception\ApiCallException;
-use Poirot\ApiClient\Transporter\HttpSocketConnection;
+use Poirot\Connection\Http\HttpSocketConnection;
 use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpRequest;
@@ -16,7 +14,6 @@ use Poirot\HttpAgent\Transporter\Listeners\onResponseBodyReceived;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseHeadersReceived;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
-use Poirot\Stream\StreamClient;
 
 /*
 $request = (new HttpRequest(['method' => 'GET', 'host' => 'raya-media.com', 'headers' => [

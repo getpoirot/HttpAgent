@@ -1,10 +1,10 @@
 <?php
 namespace Poirot\HttpAgent\Transporter\Listeners;
 
+use Poirot\Connection\Http\StreamFilter\ChunkTransferDecodeFilter;
 use Poirot\Events\Listener\AbstractListener;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpResponse;
-use Poirot\HttpAgent\Transporter\StreamFilter\ChunkTransferDecodeFilter;
 use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
 use Poirot\Stream\Filter\PhpRegisteredFilter;
 use Poirot\Stream\Interfaces\iStreamable;

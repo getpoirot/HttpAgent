@@ -1,7 +1,7 @@
 <?php
 namespace Poirot\HttpAgent\Transporter;
 
-use Poirot\ApiClient\Transporter\HttpSocketOptions;
+use Poirot\Connection\Http\HttpSocketOptions;
 use Poirot\Core\AbstractOptions;
 use Poirot\Core\Traits\CloneTrait;
 use Poirot\PathUri\HttpUri;

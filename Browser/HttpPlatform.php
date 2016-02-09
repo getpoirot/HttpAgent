@@ -1,10 +1,10 @@
 <?php
 namespace Poirot\HttpAgent\Browser;
 
-use Poirot\ApiClient\Interfaces\iTransporter;
 use Poirot\ApiClient\Interfaces\iPlatform;
 use Poirot\ApiClient\Interfaces\Request\iApiMethod;
 use Poirot\ApiClient\Interfaces\Response\iResponse;
+use Poirot\Connection\Interfaces\iConnection;
 use Poirot\Container\Interfaces\Plugins\iInvokePluginsProvider;
 use Poirot\Container\Interfaces\Plugins\iPluginManagerAware;
 use Poirot\Container\Interfaces\Plugins\iPluginManagerProvider;
@@ -57,13 +57,13 @@ class HttpPlatform
      * - manipulate header or something in connection
      * - get connect to resource
      *
-     * @param HttpSocketTransporter|iTransporter $connection
+     * @param HttpSocketTransporter|iConnection $connection
      * @param iApiMethod|null                   $method
      *
      * @throws \Exception
      * @return HttpSocketTransporter|iHttpTransporter
      */
-    function prepareTransporter(iTransporter $connection, $method = null)
+    function prepareTransporter(iConnection $connection, $method = null)
     {
         $BROWSER_OPTS = $this->browser->inOptions();
 
