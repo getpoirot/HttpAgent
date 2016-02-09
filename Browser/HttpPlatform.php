@@ -232,9 +232,11 @@ class HttpPlatform
         }
 
         ## req Uri ----------------------------------------------------------------------\
+        $basePath = null;
         if ($this->browser->inOptions()->__isset('base_url'))
             $basePath   = $this->browser->inOptions()->getBaseUrl()->getPath();
-        else
+
+        if($basePath === null)
             $basePath = new SeqPathJoinUri('/');
 
         $targetUri = $basePath->merge($ReqMethod->getUri()); ### merge with request base url path
