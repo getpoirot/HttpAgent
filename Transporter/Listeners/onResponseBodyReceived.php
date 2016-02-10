@@ -1,7 +1,7 @@
 <?php
 namespace Poirot\HttpAgent\Transporter\Listeners;
 
-use Poirot\Connection\Http\StreamFilter\ChunkTransferDecodeFilter;
+use Poirot\Connection\Http\StreamFilter\DechunkFilter;
 use Poirot\Events\Listener\AbstractListener;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpResponse;
@@ -44,7 +44,7 @@ class onResponseBodyReceived extends AbstractListener
         if ($headers->has('transfer-encoding')
             && strstr(strtolower($headers->get('Transfer-Encoding')->renderValueLine()), 'chunked') !== false
         ) {
-            $body->getResource()->appendFilter(new ChunkTransferDecodeFilter, STREAM_FILTER_READ);
+            $body->getResource()->appendFilter(new DechunkFilter, STREAM_FILTER_READ);
 
         }
 
