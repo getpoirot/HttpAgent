@@ -2,8 +2,8 @@
 namespace Poirot\HttpAgent;
 
 use Poirot\ApiClient\AbstractClient;
-use Poirot\ApiClient\Interfaces\iTransporter;
 use Poirot\ApiClient\Interfaces\Request\iApiMethod;
+use Poirot\Connection\Interfaces\iConnection;
 use Poirot\Core\AbstractOptions;
 use Poirot\Core\Interfaces\iDataSetConveyor;
 use Poirot\Core\Interfaces\iOptionsProvider;
@@ -67,15 +67,14 @@ $browser->custom(
 */
 
 /**
- * TODO call request object
- *      $this->doRequest(HttpRequest)
+ * TODO decompress gzip response with chunked data not working
  */
 class Browser extends AbstractClient
     implements iOptionsProvider
 {
     use CloneTrait;
 
-    /** @var HttpSocketTransporter|iTransporter*/
+    /** @var HttpSocketTransporter|iConnection*/
     protected $transporter;
     /** @var HttpPlatform */
     protected $platform;
