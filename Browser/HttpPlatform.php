@@ -113,7 +113,7 @@ class HttpPlatform
 
         ## disconnect old connection to reconnect with newly options if has
         if ($connection->isConnected() && $reConnect)
-            $connection->close();
+            $connection->getConnect(); ## reconnect with new options
 
         $this->_connection = $connection; ## used on make expression/response
         return $connection;
