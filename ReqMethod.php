@@ -27,29 +27,12 @@ class ReqMethod extends Method
     /** @var BrowserOptions Browser Specific Options */
     protected $browser;
 
-    /**
-     * Construct
-     *
-     * - Build Method From Setter Setup Options
-     *   'namespaces'
-     *   'method'
-     *   'arguments'
-     *
-     * @param array $setupSetter
-     */
-    function __construct(array $setupSetter = null)
-    {
-        parent::__construct($setupSetter);
-
-        $this->_t_options__internal = [
-            'setArguments', 'getArguments' ## these methods will ignore as option in prop
-        ];
-    }
 
     // override:
 
     /**
      * Set Method Arguments
+     * @ignore by OptionsTrait
      *
      * - it will replace current arguments
      * - use empty array to clear arguments
@@ -66,6 +49,7 @@ class ReqMethod extends Method
 
     /**
      * Get Method Arguments
+     * @ignore by OptionsTrait
      *
      * - we can define default arguments with some
      *   values
