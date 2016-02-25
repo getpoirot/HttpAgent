@@ -1,10 +1,9 @@
 <?php
 namespace Poirot\HttpAgent\Transporter;
 
-use Poirot\Core\AbstractOptions;
-use Poirot\Core\OpenOptions;
+use Poirot\Std\Struct\OpenOptionsData;
 
-class TransporterHttpEventCollector extends OpenOptions
+class TransporterHttpEventCollector extends OpenOptionsData
 {
     protected $response;
     protected $transporter;

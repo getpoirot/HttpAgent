@@ -55,7 +55,7 @@ class BrowserPluginManager extends AbstractPlugins
         if (!$pluginInstance instanceof iBrowserPlugin)
             throw new ContainerInvalidPluginException(sprintf(
                 'Invalid Plugin Provided For (%s).'
-                , \Poirot\Core\flatten($pluginInstance)
+                , \Poirot\Std\flatten($pluginInstance)
             ));
     }
 }

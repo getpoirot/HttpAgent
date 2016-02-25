@@ -5,8 +5,6 @@ use Poirot\Http\Header\HeaderFactory;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\HttpAgent\Interfaces\iBrowserExpressionPlugin;
 
-
-
 class BFormDataPlugin extends AbstractBrowserPlugin
     implements iBrowserExpressionPlugin
 
@@ -18,7 +16,7 @@ class BFormDataPlugin extends AbstractBrowserPlugin
      */
     function withHttpRequest(iHttpRequest $request)
     {
-        $params = $this->toArray();
+        $params = \Poirot\Std\iterator_to_array($this);
         $body   = http_build_query($params, null, '&');
 
         $request->setBody($body);

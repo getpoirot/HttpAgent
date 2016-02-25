@@ -2,8 +2,7 @@
 namespace Poirot\HttpAgent;
 
 use Poirot\ApiClient\Request\Method;
-use Poirot\Core\Interfaces\iDataSetConveyor;
-use Poirot\Core\Traits\OptionsTrait;
+use Poirot\Std\Interfaces\Struct\iDataStruct;
 use Poirot\Http\Headers;
 use Poirot\Http\Interfaces\iHeaderCollection;
 use Poirot\PathUri\HttpUri;
@@ -102,7 +101,7 @@ class ReqMethod extends Method
         if (!$uri instanceof iHttpUri && !$uri instanceof iSeqPathUri)
             throw new \InvalidArgumentException(sprintf(
                 'Uri must instance of iHttpUri, UriInterface, iSeqPathUri or string. given: "%s"'
-                , \Poirot\Core\flatten($uri)
+                , \Poirot\Std\flatten($uri)
             ));
 
         $this->uri = $uri;
@@ -160,7 +159,7 @@ class ReqMethod extends Method
 
     /**
      * Set Browser Specific Options
-     * @param array|iDataSetConveyor|BrowserOptions $browser
+     * @param array|iDataStruct|BrowserOptions $browser
      * @return $this
      */
     public function setBrowser($browser)

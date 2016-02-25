@@ -74,7 +74,7 @@ class BJsonPlugin extends AbstractBrowserPlugin
      */
     function withHttpRequest(iHttpRequest $request)
     {
-        $params = $this->toArray();
+        $params = \Poirot\Std\iterator_to_array($this);
 
         $body   = json_encode($params);
         $request->setBody($body);

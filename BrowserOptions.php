@@ -1,10 +1,9 @@
 <?php
 namespace Poirot\HttpAgent;
 
-use Poirot\Core\AbstractOptions;
-use Poirot\Core\Interfaces\iDataSetConveyor;
-use Poirot\Core\OpenOptions;
-use Poirot\Core\Traits\CloneTrait;
+use Poirot\Std\Interfaces\Struct\iDataStruct;
+use Poirot\Std\Struct\OpenOptionsData;
+use Poirot\Std\Traits\CloneTrait;
 use Poirot\HttpAgent\Transporter\HttpTransporterOptions;
 use Poirot\PathUri\HttpUri;
 use Poirot\PathUri\Interfaces\iHttpUri;
@@ -13,7 +12,7 @@ use Poirot\PathUri\Psr\UriInterface;
 /**
  * This is open options because may contains options for attached plugins
  */
-class BrowserOptions extends OpenOptions
+class BrowserOptions extends OpenOptionsData
 {
     use CloneTrait;
 
@@ -40,7 +39,7 @@ class BrowserOptions extends OpenOptions
         if (!$baseUrl instanceof iHttpUri)
             throw new \InvalidArgumentException(sprintf(
                 'BaseUrl must instance of iHttpUri, UriInterface or string. given: "%s"'
-                , \Poirot\Core\flatten($baseUrl)
+                , \Poirot\Std\flatten($baseUrl)
             ));
 
         $this->baseUrl = $baseUrl;
@@ -90,7 +89,7 @@ class BrowserOptions extends OpenOptions
     /**
      * Set Connection Options
      *
-     * @param array|iDataSetConveyor|HttpTransporterOptions $connection
+     * @param array|iDataStruct|HttpTransporterOptions $connection
      * @return $this
      */
     public function setConnection($connection)

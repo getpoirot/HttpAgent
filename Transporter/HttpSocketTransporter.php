@@ -2,7 +2,7 @@
 namespace Poirot\HttpAgent\Transporter;
 
 use Poirot\Connection\Http\HttpSocketConnection;
-use Poirot\Core\Interfaces\iDataSetConveyor;
+use Poirot\Std\Interfaces\Struct\iDataStruct;
 use Poirot\Http\Interfaces\Message\iHttpRequest;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\Http\Message\HttpResponse;
@@ -63,7 +63,7 @@ class HttpSocketTransporter extends HttpSocketConnection
      *
      * - pass connection options on construct
      *
-     * @param array|iDataSetConveyor $options Connection Options
+     * @param array|iDataStruct $options Connection Options
      */
     function __construct($options = null)
     {
@@ -85,7 +85,7 @@ class HttpSocketTransporter extends HttpSocketConnection
         if (!$expr instanceof iHttpRequest)
             throw new \InvalidArgumentException(sprintf(
                 'Request Expression must be string, iHttpRequest or RequestInterface. given: (%s).'
-                , \Poirot\Core\flatten($expr)
+                , \Poirot\Std\flatten($expr)
             ));
 
 
@@ -208,16 +208,16 @@ class HttpSocketTransporter extends HttpSocketConnection
      * @override just for ide completion
      * @return HttpTransporterOptions
      */
-    function inOptions()
+    function optsData()
     {
-        return parent::inOptions();
+        return parent::optsData();
     }
 
     /**
      * @override
      * @return HttpTransporterOptions
      */
-    static function newOptions($builder = null)
+    static function newOptsData($builder = null)
     {
         return new HttpTransporterOptions($builder);
     }

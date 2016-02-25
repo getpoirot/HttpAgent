@@ -27,7 +27,7 @@ class onResponseBodyReceived extends AbstractListener
 
         // Decoding Data:
 
-        if (!$body || !$transporter->inOptions()->isAllowDecoding())
+        if (!$body || !$transporter->optsData()->isAllowDecoding())
             ## do not decode body using raw data
             return ['body' => $body];
 

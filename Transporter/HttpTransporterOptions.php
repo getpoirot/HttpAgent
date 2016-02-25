@@ -2,8 +2,7 @@
 namespace Poirot\HttpAgent\Transporter;
 
 use Poirot\Connection\Http\HttpSocketOptions;
-use Poirot\Core\AbstractOptions;
-use Poirot\Core\Traits\CloneTrait;
+use Poirot\Std\Traits\CloneTrait;
 use Poirot\PathUri\HttpUri;
 use Poirot\PathUri\Interfaces\iHttpUri;
 use Poirot\PathUri\Psr\UriInterface;
@@ -37,7 +36,7 @@ class HttpTransporterOptions extends HttpSocketOptions
         if (!is_string($serverUrl))
             throw new \InvalidArgumentException(sprintf(
                 'Server Url must instance of iHttpUri, UriInterface or string representing url address. given: "%s".'
-                , \Poirot\Core\flatten($serverUrl)
+                , \Poirot\Std\flatten($serverUrl)
             ));
 
         $this->serverUrl = $serverUrl;

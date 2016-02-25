@@ -65,26 +65,26 @@ class HttpPlatform
      */
     function prepareTransporter(iConnection $connection, $method = null)
     {
-        $BROWSER_OPTS = $this->browser->inOptions();
+        $BROWSER_OPTS = $this->browser->optsData();
 
         $reConnect = false;
 
         # check if we have something changed in connection options
         if ($BRW_ConOpts = $BROWSER_OPTS->getConnection())
-            foreach($BRW_ConOpts->props()->readable as $prop) {
+            foreach($BRW_ConOpts->__props()->readable as $prop) {
                 if (
                     $BRW_ConOpts->__isset($prop)
                     && ### option property must be set and available
                     ### not has new option or it may changed
                     (
-                        !$connection->inOptions()->__isset($prop)
-                        || ( $connection->inOptions()->__isset($prop)
+                        !$connection->optsData()->__isset($prop)
+                        || ( $connection->optsData()->__isset($prop)
                              && ### property exists but maybe with diffrent value
-                            $connection->inOptions()->__get($prop) !== $BRW_ConOpts->__get($prop)
+                            $connection->optsData()->__get($prop) !== $BRW_ConOpts->__get($prop)
                         )
                     )
                 ) {
-                    $connection->inOptions()->__set($prop, $BRW_ConOpts->__get($prop));
+                    $connection->optsData()->__set($prop, $BRW_ConOpts->__get($prop));
                     $reConnect = true;
                 }
             }
@@ -98,15 +98,15 @@ class HttpPlatform
         }
 
         if (
-            (!$connection->inOptions()->__isset('server_url'))
+            (!$connection->optsData()->__isset('server_url'))
             || (
-                $connection->inOptions()->__isset('server_url')
+                $connection->optsData()->__isset('server_url')
                 &&
-                $absServerUrl->toString() !== $connection->inOptions()->getServerUrl()
+                $absServerUrl->toString() !== $connection->optsData()->getServerUrl()
             )
         ) {
             ($absServerUrl->getPath() === null) ?: $absServerUrl->getPath()->reset(); ### connect to host
-            $connection->inOptions()->setServerUrl($absServerUrl);
+            $connection->optsData()->setServerUrl($absServerUrl);
             $reConnect = true;
         }
 
@@ -151,7 +151,7 @@ class HttpPlatform
             $prepConn = false;
             foreach($ReqMethod->getBrowser()->props()->readable as $prop) {
                 if ( $ReqMethod->getBrowser()->__isset($prop) ) {
-                    $this->browser->inOptions()->__set($prop, $ReqMethod->getBrowser()->__get($prop));
+                    $this->browser->optsData()->__set($prop, $ReqMethod->getBrowser()->__get($prop));
                     $prepConn = true;
                 }
             }
@@ -172,7 +172,7 @@ class HttpPlatform
              */
             $t_uri = $ReqMethod->getUri();
             if ($t_uri->getHost()) {
-                $this->browser->inOptions()->setBaseUrl($t_uri);
+                $this->browser->optsData()->setBaseUrl($t_uri);
                 $this->prepareTransporter($this->_connection);
             }
 
@@ -198,9 +198,9 @@ class HttpPlatform
         ### default headers
         $reqHeaders = $REQUEST->getHeaders();
 
-        if ($this->browser->inOptions()->__isset('user_agent'))
+        if ($this->browser->optsData()->__isset('user_agent'))
             $reqHeaders->set(HeaderFactory::factory('User-Agent'
-                , $this->browser->inOptions()->getUserAgent()
+                , $this->browser->optsData()->getUserAgent()
             ));
 
         $reqHeaders->set(HeaderFactory::factory('Accept'
@@ -217,7 +217,7 @@ class HttpPlatform
             ));*/
 
         ### headers as default browser defined header
-        foreach($this->browser->inOptions()->getRequest()->getHeaders() as $h)
+        foreach($this->browser->optsData()->getRequest()->getHeaders() as $h)
             $reqHeaders->set($h);
 
         ### headers as request method options
@@ -233,8 +233,8 @@ class HttpPlatform
 
         ## req Uri ----------------------------------------------------------------------\
         $basePath = null;
-        if ($this->browser->inOptions()->__isset('base_url'))
-            $basePath   = $this->browser->inOptions()->getBaseUrl()->getPath();
+        if ($this->browser->optsData()->__isset('base_url'))
+            $basePath   = $this->browser->optsData()->getBaseUrl()->getPath();
 
         if($basePath === null)
             $basePath = new SeqPathJoinUri('/');
@@ -307,7 +307,7 @@ class HttpPlatform
     {
         $request = new HttpRequest;
 
-        if ($reqOptions = $this->browser->inOptions()->getRequest())
+        if ($reqOptions = $this->browser->optsData()->getRequest())
             ## build with browser request options if has
             $request->from($reqOptions);
 

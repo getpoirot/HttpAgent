@@ -1,10 +1,10 @@
 <?php
 namespace Poirot\HttpAgent\Browser\Plugin;
 
-use Poirot\Core\OpenOptions;
 use Poirot\HttpAgent\Interfaces\iBrowserPlugin;
+use Poirot\Std\Struct\OpenOptionsData;
 
-class AbstractBrowserPlugin extends OpenOptions
+class AbstractBrowserPlugin extends OpenOptionsData
     implements iBrowserPlugin
 {
 

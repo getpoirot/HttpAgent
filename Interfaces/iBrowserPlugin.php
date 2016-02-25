@@ -1,7 +1,7 @@
 <?php
 namespace Poirot\HttpAgent\Interfaces;
 
-use Poirot\Core\Interfaces\iOptionImplement;
+use Poirot\Std\Interfaces\Struct\iOptionsData;
 
 /**
  * Browser Plugins Will Triggered When Options Name Same As Plugin
@@ -16,7 +16,7 @@ use Poirot\Core\Interfaces\iOptionImplement;
  * [code]
  */
 
-interface iBrowserPlugin extends iOptionImplement
+interface iBrowserPlugin extends iOptionsData
 {
 
 }

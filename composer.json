@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "poirot/core": "dev-master"
+        "poirot/std": "dev-master"
         , "poirot/api-client": "dev-master"
             , "poirot/connection": "dev-master"
             , "poirot/stream": "dev-master"

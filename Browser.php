@@ -4,10 +4,9 @@ namespace Poirot\HttpAgent;
 use Poirot\ApiClient\AbstractClient;
 use Poirot\ApiClient\Interfaces\Request\iApiMethod;
 use Poirot\Connection\Interfaces\iConnection;
-use Poirot\Core\AbstractOptions;
-use Poirot\Core\Interfaces\iDataSetConveyor;
-use Poirot\Core\Interfaces\iOptionsProvider;
-use Poirot\Core\Traits\CloneTrait;
+use Poirot\Std\Interfaces\Struct\iDataStruct;
+use Poirot\Std\Interfaces\ipOptionsProvider;
+use Poirot\Std\Traits\CloneTrait;
 use Poirot\Http\Interfaces\iHeaderCollection;
 use Poirot\Http\Message\HttpRequest;
 use Poirot\HttpAgent\Browser\HttpPlatform;
@@ -70,7 +69,7 @@ $browser->custom(
  * TODO decompress gzip response with chunked data not working
  */
 class Browser extends AbstractClient
-    implements iOptionsProvider
+    implements ipOptionsProvider
 {
     use CloneTrait;
 
@@ -91,18 +90,18 @@ class Browser extends AbstractClient
      *    'connection'  => ['time_out' => 20]
      * ]);
      *
-     * @param BrowserOptions|iDataSetConveyor|null|string $baseUrlOrOptions
+     * @param BrowserOptions|iDataStruct|null|string $baseUrlOrOptions
      * @param array|null                                  $ops     Options when using as base_url
      */
     function __construct($baseUrlOrOptions = null, $ops = null)
     {
         if ($baseUrlOrOptions !== null && is_string($baseUrlOrOptions))
-            $this->inOptions()->setBaseUrl($baseUrlOrOptions);
+            $this->optsData()->setBaseUrl($baseUrlOrOptions);
         elseif ($baseUrlOrOptions !== null)
             $ops = $baseUrlOrOptions;
 
         if ($ops !== null)
-            $this->inOptions()->from($ops);
+            $this->optsData()->from($ops);
     }
 
     /**
@@ -129,7 +128,7 @@ class Browser extends AbstractClient
     function transporter()
     {
         if (!$this->transporter)
-            $this->transporter = new HttpSocketTransporter($this->inOptions()->getConnection());
+            $this->transporter = new HttpSocketTransporter($this->optsData()->getConnection());
 
         return $this->transporter;
     }
@@ -255,7 +254,7 @@ class Browser extends AbstractClient
      * Make Request Method Call To Server
      *
      * @param string|iSeqPathUri|iHttpUri|UriInterface $uri     Absolute Uri Or Relative To BaseUrl
-     * @param array|iDataSetConveyor|null              $options Browser Options Or Open Options Used By Plugins
+     * @param array|iDataStruct|null              $options Browser Options Or Open Options Used By Plugins
      * @param iStreamable|string|null                  $body    Request Body
      * @param array|iHeaderCollection|null             $headers Specific Request Header/Replace Defaults
      *
@@ -281,10 +280,10 @@ class Browser extends AbstractClient
     /**
      * @return BrowserOptions
      */
-    function inOptions()
+    function optsData()
     {
         if (!$this->options)
-            $this->options = static::newOptions();
+            $this->options = static::newOptsData();
 
         return $this->options;
     }
@@ -305,7 +304,7 @@ class Browser extends AbstractClient
      *
      * @return BrowserOptions
      */
-    static function newOptions($builder = null)
+    static function newOptsData($builder = null)
     {
         return new BrowserOptions($builder);
     }
