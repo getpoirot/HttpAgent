@@ -10,12 +10,10 @@
         }
     ],
     "require": {
-        "poirot/std": "dev-master"
-        , "poirot/api-client": "dev-master"
-            , "poirot/connection": "dev-master"
-            , "poirot/stream": "dev-master"
-        , "poirot/http": "dev-master"
-        , "poirot/events": "dev-master"
+        "poirot/std": "dev-devel"
+        , "poirot/api-client": "dev-devel"
+        , "poirot/http": "dev-devel"
+        , "poirot/events": "dev-devel"
     },
     "target-dir": "Poirot/HttpAgent"
     , "autoload"  : {
