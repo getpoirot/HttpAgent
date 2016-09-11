@@ -18,5 +18,5 @@ namespace Poirot\HttpAgent\Browser\Plugin;
 
 class CookieBrowserPlg
 {
-
+    // TODO Implement
 }

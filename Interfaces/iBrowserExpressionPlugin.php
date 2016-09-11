@@ -1,7 +1,7 @@
 <?php
 namespace Poirot\HttpAgent\Interfaces;
 
-use Poirot\Http\Interfaces\Message\iHttpRequest;
+use Poirot\Http\Interfaces\iHttpRequest;
 
 /**
  * Plugins implementing this get expression request object

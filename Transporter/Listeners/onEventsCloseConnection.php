@@ -1,11 +1,13 @@
 <?php
 namespace Poirot\HttpAgent\Transporter\Listeners;
 
-use Poirot\Events\Listener\AbstractListener;
-use Poirot\Http\Message\HttpResponse;
+use Poirot\Events\Listener\aListener;
+use Poirot\Http\HttpResponse;
 use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
 
-class onEventsCloseConnection extends AbstractListener
+
+class onEventsCloseConnection 
+    extends aListener
 {
     /**
      * @param HttpSocketTransporter $transporter
@@ -18,10 +20,10 @@ class onEventsCloseConnection extends AbstractListener
     function __invoke($transporter = null, $response = null, $continue = null)
     {
         ## Close the connection if requested to do so by the server
-        $headers = $response->getHeaders();
+        $headers = $response->headers();
         if (
             $headers->has('connection')
-            && strstr($headers->get('connection')->renderValueLine(), 'close') !== false
+            && strstr($headers->get('connection')->current()->renderValueLine(), 'close') !== false
             && $transporter->isConnected()
             && $continue === false
         )

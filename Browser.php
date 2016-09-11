@@ -1,20 +1,15 @@
 <?php
 namespace Poirot\HttpAgent;
 
-use Poirot\ApiClient\AbstractClient;
+use Poirot\ApiClient\aClient;
 use Poirot\ApiClient\Interfaces\Request\iApiMethod;
 use Poirot\Connection\Interfaces\iConnection;
-use Poirot\Std\Interfaces\Struct\iDataStruct;
-use Poirot\Std\Interfaces\ipOptionsProvider;
-use Poirot\Std\Traits\CloneTrait;
-use Poirot\Http\Interfaces\iHeaderCollection;
-use Poirot\Http\Message\HttpRequest;
+use Poirot\Http\HttpRequest;
+use Poirot\Http\Interfaces\iHeaders;
 use Poirot\HttpAgent\Browser\HttpPlatform;
 use Poirot\HttpAgent\Browser\ResponsePlatform;
 use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
-use Poirot\PathUri\Interfaces\iHttpUri;
-use Poirot\PathUri\Interfaces\iSeqPathUri;
-use Poirot\PathUri\Psr\UriInterface;
+use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
 use Poirot\Stream\Interfaces\iStreamable;
 
 /*
@@ -68,11 +63,9 @@ $browser->custom(
 /**
  * TODO decompress gzip response with chunked data not working
  */
-class Browser extends AbstractClient
+class Browser extends aClient
     implements ipOptionsProvider
 {
-    use CloneTrait;
-
     /** @var HttpSocketTransporter|iConnection*/
     protected $transporter;
     /** @var HttpPlatform */
@@ -84,14 +77,14 @@ class Browser extends AbstractClient
     /**
      * Construct
      *
-     * - construct('http://google.com', ['connection' => ['time_out' => 20]]);
+     * - construct('http://google.com', ['connection_options' => ['time_out' => 20]]);
      * - construct([
-     *    'base_url'    => 'http://google.com'
-     *    'connection'  => ['time_out' => 20]
+     *    'base_url'            => 'http://google.com'
+     *    'connection_options'  => ['time_out' => 20]
      * ]);
      *
-     * @param BrowserOptions|iDataStruct|null|string $baseUrlOrOptions
-     * @param array|null                                  $ops     Options when using as base_url
+     * @param BrowserOptions|\Traversable|null|string $baseUrlOrOptions
+     * @param array|null                              $ops               Options when using as base_url
      */
     function __construct($baseUrlOrOptions = null, $ops = null)
     {
@@ -101,7 +94,7 @@ class Browser extends AbstractClient
             $ops = $baseUrlOrOptions;
 
         if ($ops !== null)
-            $this->optsData()->from($ops);
+            $this->optsData()->import($ops);
     }
 
     /**
@@ -128,13 +121,14 @@ class Browser extends AbstractClient
     function transporter()
     {
         if (!$this->transporter)
-            $this->transporter = new HttpSocketTransporter($this->optsData()->getConnection());
+            $this->transporter = new HttpSocketTransporter($this->optsData()->getConnectionOptions());
 
         return $this->transporter;
     }
 
 
     // ...
+    
     /** @link http://www.tutorialspoint.com/http/http_methods.htm */
 
     /**
@@ -246,32 +240,32 @@ class Browser extends AbstractClient
      */
     function request(HttpRequest $request, $options = null)
     {
-        $uri = $request->getUri();
-        return $this->__makeRequestCall($request->getMethod(), $uri, $options, $request->getBody(), $request->getHeaders());
+        $uri = $request->getTarget();
+        return $this->__makeRequestCall($request->getMethod(), $uri, $options, $request->getBody(), $request->headers());
     }
 
     /**
      * Make Request Method Call To Server
      *
-     * @param string|iSeqPathUri|iHttpUri|UriInterface $uri     Absolute Uri Or Relative To BaseUrl
-     * @param array|iDataStruct|null              $options Browser Options Or Open Options Used By Plugins
-     * @param iStreamable|string|null                  $body    Request Body
-     * @param array|iHeaderCollection|null             $headers Specific Request Header/Replace Defaults
+     * @param string                  $method  Request Method
+     * @param string                  $uri     Absolute Uri Or Relative To BaseUrl
+     * @param array|\Traversable|null $options Browser Options Or Open Options Used By Plugins
+     * @param iStreamable|string|null $body    Request Body
+     * @param array|iHeaders|null     $headers Specific Request Header/Replace Defaults
      *
      * @return ResponsePlatform
      */
     protected function __makeRequestCall($method, $uri, $options=null, $body=null, $headers=null)
     {
-        $method = new ReqMethod([
-            'uri'    => $uri,
-            'method' => $method,
-        ]);
+        $command = new CommandRequestHttp();
+        $command->setMethod($method);
+        $command->setUri($uri);
 
-        ($options === null) ?: $method->setBrowser($options);
-        ($body    === null) ?: $method->setBody($body);
-        ($headers === null) ?: $method->setHeaders($headers);
+        ($options === null) ?: $command->setBrowserOptions($options);
+        ($body    === null) ?: $command->setBody($body);
+        ($headers === null) ?: $command->setHeaders($headers);
 
-        $response = $this->call($method);
+        $response = $this->call($command);
         return $response;
     }
 

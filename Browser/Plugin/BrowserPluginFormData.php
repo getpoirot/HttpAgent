@@ -1,11 +1,12 @@
 <?php
 namespace Poirot\HttpAgent\Browser\Plugin;
 
-use Poirot\Http\Header\HeaderFactory;
-use Poirot\Http\Interfaces\Message\iHttpRequest;
+use Poirot\Http\Header\FactoryHttpHeader;
+use Poirot\Http\Interfaces\iHttpRequest;
 use Poirot\HttpAgent\Interfaces\iBrowserExpressionPlugin;
 
-class BFormDataPlugin extends AbstractBrowserPlugin
+class BrowserPluginFormData 
+    extends BaseBrowserPlugin
     implements iBrowserExpressionPlugin
 
 {
@@ -16,10 +17,12 @@ class BFormDataPlugin extends AbstractBrowserPlugin
      */
     function withHttpRequest(iHttpRequest $request)
     {
-        $params = \Poirot\Std\iterator_to_array($this);
+        $params = \Poirot\Std\cast($this)->toArray();
         $body   = http_build_query($params, null, '&');
 
         $request->setBody($body);
-        $request->getHeaders()->set(HeaderFactory::factory('Content-Type', 'application/x-www-form-urlencoded'));
+        $request->headers()->insert(
+            FactoryHttpHeader::of( array('Content-Type' => 'application/x-www-form-urlencoded') )
+        );
     }
 }

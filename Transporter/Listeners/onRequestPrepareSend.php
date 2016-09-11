@@ -1,13 +1,15 @@
 <?php
 namespace Poirot\HttpAgent\Transporter\Listeners;
 
-use Poirot\Events\Listener\AbstractListener;
-use Poirot\Http\Header\HeaderFactory;
-use Poirot\Http\Interfaces\Message\iHttpRequest;
+use Poirot\Events\Listener\aListener;
+use Poirot\Http\Header\FactoryHttpHeader;
+use Poirot\Http\Interfaces\iHttpRequest;
 use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
 use Poirot\Stream\Interfaces\iStreamable;
 
-class onRequestPrepareSend extends AbstractListener
+
+class onRequestPrepareSend 
+    extends aListener
 {
     /**
      * @param HttpSocketTransporter $transporter
@@ -36,8 +38,8 @@ class onRequestPrepareSend extends AbstractListener
         }
 
         if ($length !== false) {
-            if (!$request->getHeaders()->has('Content-Length'))
-            $request->getHeaders()->set(HeaderFactory::factory('Content-Length', (string) $length));
+            if (!$request->headers()->has('Content-Length'))
+                $request->headers()->insert(FactoryHttpHeader::of(array('Content-Length' => (string) $length)));
         }
     }
 }

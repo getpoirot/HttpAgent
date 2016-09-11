@@ -1,11 +1,10 @@
 <?php
 namespace Poirot\HttpAgent\Transporter;
 
-use Poirot\Events\BaseEvent;
-use Poirot\Events\BaseEvents;
-use Poirot\Events\EventBuilder;
+use Poirot\Events\Event\BuildEvent;
+use Poirot\Events\EventHeap;
 
-class TransporterHttpEvents extends BaseEvents
+class TransporterHttpEvents extends EventHeap
 {
     const EVENT_REQUEST_SEND_PREPARE      = 'request.send.prepare';
     const EVENT_RESPONSE_HEADERS_RECEIVED = 'response.head.receive';
@@ -18,13 +17,13 @@ class TransporterHttpEvents extends BaseEvents
      * with setter:
      * - new Events(new EventBuilder([ ...options]))
      *
-     * @param EventBuilder|string $setter
+     * @param BuildEvent|string $setter
      */
     function __construct($setter = null)
     {
         parent::__construct($setter);
 
-        $this->setCollector(new TransporterHttpEventCollector);
+        $this->collector(new TransporterHttpEventCollector);
 
         // attach default event names:
         ## also share this collector into them

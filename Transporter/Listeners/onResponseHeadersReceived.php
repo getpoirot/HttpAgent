@@ -1,14 +1,15 @@
 <?php
 namespace Poirot\HttpAgent\Transporter\Listeners;
 
-use Poirot\Events\Listener\AbstractListener;
-use Poirot\Http\Interfaces\Message\iHttpRequest;
-use Poirot\Http\Message\HttpRequest;
-use Poirot\Http\Message\HttpResponse;
+use Poirot\Events\Listener\aListener;
+use Poirot\Http\HttpRequest;
+use Poirot\Http\HttpResponse;
+use Poirot\Http\Interfaces\iHttpRequest;
 use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
 use Poirot\Stream\Streamable;
 
-class onResponseHeadersReceived extends AbstractListener
+
+class onResponseHeadersReceived extends aListener
 {
     /**
      * @param HttpSocketTransporter $transporter
@@ -20,7 +21,7 @@ class onResponseHeadersReceived extends AbstractListener
      */
     function __invoke($transporter = null, $response = null, $stream = null, $request = null)
     {
-        $statusCode = $response->getStatCode();
+        $statusCode = $response->getStatusCode();
 
         # Handle 100 and 101 responses
         if ($statusCode == 100 || $statusCode == 101)
@@ -30,7 +31,7 @@ class onResponseHeadersReceived extends AbstractListener
         # HEAD requests and 204 or 304 stat codes are not expected to have a body
         if ($statusCode == 304 || $statusCode == 204 || $request->getMethod() == HttpRequest::METHOD_HEAD)
             ## do not continue with body
-            return ['continue' => false];
+            return array('continue' => false);
 
         /*$statusPlugin = new Status(['message_object' => $response]);
         if (!$statusPlugin->isSuccess())

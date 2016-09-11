@@ -1,55 +1,42 @@
 <?php
 namespace Poirot\HttpAgent;
 
-use Poirot\Std\Interfaces\Struct\iDataStruct;
-use Poirot\Std\Struct\OpenOptionsData;
-use Poirot\Std\Traits\CloneTrait;
+use Poirot\Std\Struct\DataOptionsOpen;
+
 use Poirot\HttpAgent\Transporter\HttpTransporterOptions;
-use Poirot\PathUri\HttpUri;
-use Poirot\PathUri\Interfaces\iHttpUri;
-use Poirot\PathUri\Psr\UriInterface;
+
 
 /**
  * This is open options because may contains options for attached plugins
  */
-class BrowserOptions extends OpenOptionsData
+class BrowserOptions 
+    extends DataOptionsOpen
 {
-    use CloneTrait;
-
-    /** @var string|iHttpUri|UriInterface Base Url to Server */
-    protected $baseUrl    = VOID;
-    protected $userAgent  = VOID;
+    /** @var string Base Url to Server */
+    protected $baseUrl;
+    protected $userAgent;
 
     # default element options
     /** @var HttpTransporterOptions */
-    protected $connection;
+    protected $connectionOptions;
     /** @var BrowserRequestOptions */
-    protected $request;
+    protected $requestOptions;
 
 
     /**
-     * @param iHttpUri|UriInterface|string $baseUrl
+     * @param string $baseUrl
      * @return $this
      */
-    public function setBaseUrl($baseUrl)
+    function setBaseUrl($baseUrl)
     {
-        if (is_string($baseUrl) || $baseUrl instanceof UriInterface)
-            $baseUrl = new HttpUri($baseUrl);
-
-        if (!$baseUrl instanceof iHttpUri)
-            throw new \InvalidArgumentException(sprintf(
-                'BaseUrl must instance of iHttpUri, UriInterface or string. given: "%s"'
-                , \Poirot\Std\flatten($baseUrl)
-            ));
-
-        $this->baseUrl = $baseUrl;
+        $this->baseUrl = (string) $baseUrl;
         return $this;
     }
 
     /**
-     * @return iHttpUri|VOID
+     * @return string|null
      */
-    public function getBaseUrl()
+    function getBaseUrl()
     {
         return $this->baseUrl;
     }
@@ -58,7 +45,7 @@ class BrowserOptions extends OpenOptionsData
      * @param mixed $userAgent
      * @return $this
      */
-    public function setUserAgent($userAgent)
+    function setUserAgent($userAgent)
     {
         $this->userAgent = (string) $userAgent;
         return $this;
@@ -67,7 +54,7 @@ class BrowserOptions extends OpenOptionsData
     /**
      * @return mixed
      */
-    public function getUserAgent()
+    function getUserAgent()
     {
         if (!$this->userAgent || $this->userAgent === VOID) {
             $userAgent = '';
@@ -89,47 +76,45 @@ class BrowserOptions extends OpenOptionsData
     /**
      * Set Connection Options
      *
-     * @param array|iDataStruct|HttpTransporterOptions $connection
+     * @param array|\Traversable|HttpTransporterOptions $connectionOptions
      * @return $this
      */
-    public function setConnection($connection)
+    function setConnectionOptions($connectionOptions)
     {
-        // TODO catch exception for bright exception message
-        $this->getConnection()->from($connection);
+        $this->getConnectionOptions()->import($connectionOptions);
         return $this;
     }
 
     /**
      * @return HttpTransporterOptions
      */
-    public function getConnection()
+    function getConnectionOptions()
     {
-        if (!$this->connection || $this->connection === VOID)
-            $this->connection = new HttpTransporterOptions;
+        if (!$this->connectionOptions)
+            $this->connectionOptions = new HttpTransporterOptions;
 
-        return $this->connection;
+        return $this->connectionOptions;
     }
 
     /**
      * Set Request Options Params
-     * @param mixed $request
+     * @param mixed $requestOptions
      * @return $this
      */
-    public function setRequest($request)
+    function setRequestOptions($requestOptions)
     {
-        // TODO catch exception for bright exception message
-        $this->getRequest()->from($request);
+        $this->getRequestOptions()->import($requestOptions);
         return $this;
     }
 
     /**
      * @return BrowserRequestOptions
      */
-    public function getRequest()
+    function getRequestOptions()
     {
-        if (!$this->request || $this->request === VOID)
-            $this->request = new BrowserRequestOptions;
+        if (!$this->requestOptions)
+            $this->requestOptions = new BrowserRequestOptions;
 
-        return $this->request;
+        return $this->requestOptions;
     }
 }

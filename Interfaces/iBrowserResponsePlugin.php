@@ -1,7 +1,7 @@
 <?php
 namespace Poirot\HttpAgent\Interfaces;
 
-use Poirot\Http\Interfaces\Message\iHttpResponse;
+use Poirot\Http\Interfaces\iHttpResponse;
 
 interface iBrowserResponsePlugin
 {

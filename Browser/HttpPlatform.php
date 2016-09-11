@@ -5,30 +5,17 @@ use Poirot\ApiClient\Interfaces\iPlatform;
 use Poirot\ApiClient\Interfaces\Request\iApiMethod;
 use Poirot\ApiClient\Interfaces\Response\iResponse;
 use Poirot\Connection\Interfaces\iConnection;
-use Poirot\Container\Interfaces\Plugins\iInvokePluginsProvider;
-use Poirot\Container\Interfaces\Plugins\iPluginManagerAware;
-use Poirot\Container\Interfaces\Plugins\iPluginManagerProvider;
-use Poirot\Container\Plugins\AbstractPlugins;
-use Poirot\Container\Plugins\PluginsInvokable;
-use Poirot\Http\Header\HeaderFactory;
 use Poirot\Http\Interfaces\iHeader;
-use Poirot\Http\Message\HttpRequest;
-use Poirot\Http\Message\HttpResponse;
 use Poirot\HttpAgent\Browser;
 use Poirot\HttpAgent\Interfaces\iBrowserExpressionPlugin;
 use Poirot\HttpAgent\Interfaces\iBrowserResponsePlugin;
 use Poirot\HttpAgent\Interfaces\iHttpTransporter;
-use Poirot\HttpAgent\ReqMethod;
+use Poirot\HttpAgent\CommandRequestHttp;
 use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
-use Poirot\PathUri\HttpUri;
-use Poirot\PathUri\Interfaces\iHttpUri;
-use Poirot\PathUri\SeqPathJoinUri;
+
 
 class HttpPlatform
     implements iPlatform
-    , iInvokePluginsProvider
-    , iPluginManagerProvider
-    , iPluginManagerAware
 {
     /** @var Browser */
     protected $browser;
@@ -70,7 +57,7 @@ class HttpPlatform
         $reConnect = false;
 
         # check if we have something changed in connection options
-        if ($BRW_ConOpts = $BROWSER_OPTS->getConnection())
+        if ($BRW_ConOpts = $BROWSER_OPTS->getConnectionOptions())
             foreach($BRW_ConOpts->__props()->readable as $prop) {
                 if (
                     $BRW_ConOpts->__isset($prop)
@@ -106,7 +93,7 @@ class HttpPlatform
             )
         ) {
             ($absServerUrl->getPath() === null) ?: $absServerUrl->getPath()->reset(); ### connect to host
-            $connection->optsData()->setServerUrl($absServerUrl);
+            $connection->optsData()->setServerAddress($absServerUrl);
             $reConnect = true;
         }
 
@@ -123,7 +110,7 @@ class HttpPlatform
      * Build Platform Specific Expression To Send
      * Trough Connection
      *
-     * @param iApiMethod|ReqMethod $ReqMethod Method Interface
+     * @param iApiMethod|CommandRequestHttp $ReqMethod Method Interface
      *
      * @return HttpRequest
      */
@@ -135,8 +122,8 @@ class HttpPlatform
         $this->browser = clone $CUR_BROWSER;
 
 
-        if (!$ReqMethod instanceof ReqMethod)
-            $ReqMethod = new ReqMethod($ReqMethod->toArray());
+        if (!$ReqMethod instanceof CommandRequestHttp)
+            $ReqMethod = new CommandRequestHttp($ReqMethod->toArray());
 
 
         # Request Options:
@@ -146,12 +133,12 @@ class HttpPlatform
          *      'form_data' => [
          *      // ...
          */
-        if ($ReqMethod->getBrowser()) {
+        if ($ReqMethod->getBrowserOptions()) {
             ## Browser specific options
             $prepConn = false;
-            foreach($ReqMethod->getBrowser()->props()->readable as $prop) {
-                if ( $ReqMethod->getBrowser()->__isset($prop) ) {
-                    $this->browser->optsData()->__set($prop, $ReqMethod->getBrowser()->__get($prop));
+            foreach($ReqMethod->getBrowserOptions()->props()->readable as $prop) {
+                if ( $ReqMethod->getBrowserOptions()->__isset($prop) ) {
+                    $this->browser->optsData()->__set($prop, $ReqMethod->getBrowserOptions()->__get($prop));
                     $prepConn = true;
                 }
             }
@@ -217,7 +204,7 @@ class HttpPlatform
             ));*/
 
         ### headers as default browser defined header
-        foreach($this->browser->optsData()->getRequest()->getHeaders() as $h)
+        foreach($this->browser->optsData()->getRequestOptions()->getHeaders() as $h)
             $reqHeaders->set($h);
 
         ### headers as request method options
@@ -257,7 +244,7 @@ class HttpPlatform
 
         # Implement Browser Plugins:
         ## (3)
-        foreach($ReqMethod->getBrowser()->props()->readable as $prop) {
+        foreach($ReqMethod->getBrowserOptions()->props()->readable as $prop) {
             if (!$this->getPluginManager()->has($prop))
                 /*
                  * $browser->POST('/api/v1/auth/login', [
@@ -266,9 +253,9 @@ class HttpPlatform
                 */
                 continue; ## no plugin bind on this option
 
-            /** @var Browser\Plugin\AbstractBrowserPlugin $plugin */
+            /** @var Browser\Plugin\BaseBrowserPlugin $plugin */
             $plugin = $this->getPluginManager()->fresh($prop);
-            $plugin->from($ReqMethod->getBrowser()->__get($prop)); ### options for service
+            $plugin->from($ReqMethod->getBrowserOptions()->__get($prop)); ### options for service
 
             if($plugin instanceof iBrowserExpressionPlugin)
                 $plugin->withHttpRequest($REQUEST);
@@ -307,7 +294,7 @@ class HttpPlatform
     {
         $request = new HttpRequest;
 
-        if ($reqOptions = $this->browser->optsData()->getRequest())
+        if ($reqOptions = $this->browser->optsData()->getRequestOptions())
             ## build with browser request options if has
             $request->from($reqOptions);
 

@@ -1,13 +1,17 @@
 <?php
 namespace Poirot\HttpAgent\Browser;
 
-use Poirot\ApiClient\Response;
+use Poirot\ApiClient\ResponseOfClient;
+
+use Poirot\Http\HttpMessage\Response\Plugin\Status;
+use Poirot\Http\HttpResponse;
 use Poirot\Http\Interfaces\iHeader;
-use Poirot\Http\Message\HttpResponse;
-use Poirot\Http\Plugins\Response\Status as ResposeStatusPlugin;
+
 use Poirot\Stream\Interfaces\iStreamable;
 
-class ResponsePlatform extends Response
+
+class ResponsePlatform 
+    extends ResponseOfClient
 {
     /**
      * Construct
@@ -24,9 +28,9 @@ class ResponsePlatform extends Response
         foreach($response->getHeaders() as $h)
             $this->meta()->set($h->getLabel(), $h);
 
-        $statusPlugin = new ResposeStatusPlugin(['message_object' => $response]);
+        $statusPlugin = Status::_($response);
         if (!$statusPlugin->isSuccess())
-            $this->setException(new \RuntimeException($response->getStatReason(), $response->getStatCode()));
+            $this->setException(new \RuntimeException($response->getStatusReason(), $response->getStatusCode()));
     }
 
 

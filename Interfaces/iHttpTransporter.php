@@ -1,15 +1,15 @@
 <?php
 namespace Poirot\HttpAgent\Interfaces;
 
-use Poirot\ApiClient\Exception\ApiCallException;
-use Poirot\ApiClient\Exception\ConnectException;
+use Poirot\Connection\Exception\ApiCallException;
+use Poirot\Connection\Exception\ConnectException;
 use Poirot\Connection\Interfaces\iConnection;
 use Poirot\Events\Interfaces\Respec\iEventProvider;
-use Poirot\Http\Interfaces\Message\iHttpRequest;
-use Poirot\Http\Message\HttpResponse;
-use Poirot\Http\Psr\Interfaces\RequestInterface;
+use Poirot\Http\HttpResponse;
+use Poirot\Http\Interfaces\iHttpRequest;
 use Poirot\HttpAgent\Transporter\HttpTransporterOptions;
 use Poirot\HttpAgent\Transporter\TransporterHttpEvents;
+use Psr\Http\Message\RequestInterface;
 
 interface iHttpTransporter
     extends iConnection

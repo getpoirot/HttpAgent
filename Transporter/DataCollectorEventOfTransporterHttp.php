@@ -1,9 +1,10 @@
 <?php
 namespace Poirot\HttpAgent\Transporter;
 
-use Poirot\Std\Struct\OpenOptionsData;
+use Poirot\Std\Struct\DataOptionsOpen;
 
-class TransporterHttpEventCollector extends OpenOptionsData
+class TransporterHttpEventCollector 
+    extends DataOptionsOpen
 {
     protected $response;
     protected $transporter;
@@ -16,7 +17,7 @@ class TransporterHttpEventCollector extends OpenOptionsData
     /**
      * @return mixed
      */
-    public function getResponse()
+    function getResponse()
     {
         return $this->response;
     }
@@ -24,7 +25,7 @@ class TransporterHttpEventCollector extends OpenOptionsData
     /**
      * @param mixed $response
      */
-    public function setResponse($response)
+    function setResponse($response)
     {
         $this->response = $response;
     }
@@ -32,7 +33,7 @@ class TransporterHttpEventCollector extends OpenOptionsData
     /**
      * @return mixed
      */
-    public function getTransporter()
+    function getTransporter()
     {
         return $this->transporter;
     }
@@ -40,7 +41,7 @@ class TransporterHttpEventCollector extends OpenOptionsData
     /**
      * @param mixed $transporter
      */
-    public function setTransporter($transporter)
+    function setTransporter($transporter)
     {
         $this->transporter = $transporter;
     }
@@ -48,7 +49,7 @@ class TransporterHttpEventCollector extends OpenOptionsData
     /**
      * @return mixed
      */
-    public function getRequest()
+    function getRequest()
     {
         return $this->request;
     }
@@ -56,7 +57,7 @@ class TransporterHttpEventCollector extends OpenOptionsData
     /**
      * @param mixed $request
      */
-    public function setRequest($request)
+    function setRequest($request)
     {
         $this->request = $request;
     }
@@ -66,7 +67,7 @@ class TransporterHttpEventCollector extends OpenOptionsData
     /**
      * @return mixed
      */
-    public function getContinue()
+    function getContinue()
     {
         return $this->continue;
     }
@@ -74,7 +75,7 @@ class TransporterHttpEventCollector extends OpenOptionsData
     /**
      * @param mixed $continue
      */
-    public function setContinue($continue)
+    function setContinue($continue)
     {
         $this->continue = $continue;
     }
@@ -82,7 +83,7 @@ class TransporterHttpEventCollector extends OpenOptionsData
     /**
      * @return mixed
      */
-    public function getBody()
+    function getBody()
     {
         return $this->body;
     }
@@ -90,7 +91,7 @@ class TransporterHttpEventCollector extends OpenOptionsData
     /**
      * @param mixed $body
      */
-    public function setBody($body)
+    function setBody($body)
     {
         $this->body = $body;
     }
