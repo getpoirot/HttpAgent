@@ -24,11 +24,11 @@ interface iHttpTransporter
      * - don't set request globally through request() if
      *   expr set
      *
-     * !! it must be connected
+     * !! getConnect IF NOT
      *
      * @param iHttpRequest|RequestInterface|string $expr Expression
      *
-     * @throws ApiCallException|ConnectException
+     * @throws ApiCallException
      * @return HttpResponse Prepared Server Response
      */
     function send($expr = null);
