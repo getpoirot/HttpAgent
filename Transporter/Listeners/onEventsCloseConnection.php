@@ -2,15 +2,17 @@
 namespace Poirot\HttpAgent\Transporter\Listeners;
 
 use Poirot\Events\Listener\aListener;
+
 use Poirot\Http\HttpResponse;
-use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
+
+use Poirot\HttpAgent\Transporter\TransporterHttpSocket;
 
 
 class onEventsCloseConnection 
     extends aListener
 {
     /**
-     * @param HttpSocketTransporter $transporter
+     * @param TransporterHttpSocket $transporter
      * @param HttpResponse          $response
      * @param null                  $continue
      *                              From Events To Tell Just Continue With Body

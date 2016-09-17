@@ -1,10 +1,12 @@
 <?php
-namespace Poirot\HttpAgent\Browser;
+namespace Poirot\HttpAgent\Platform;
 
-use Poirot\Container\Exception\ContainerInvalidPluginException;
-use Poirot\Container\Interfaces\iContainerBuilder;
-use Poirot\Container\Plugins\AbstractPlugins;
-use Poirot\HttpAgent\Interfaces\iBrowserPlugin;
+use Poirot\Ioc\Container\aContainerCapped;
+use Poirot\Ioc\Container\BuildContainer;
+use Poirot\Ioc\Container\Exception\exContainerInvalidServiceType;
+
+use Poirot\HttpAgent\Interfaces\iPluginBrowser;
+
 
 /**
  * Browser Plugins Will Triggered When Options Name Same As Plugin
@@ -18,23 +20,19 @@ use Poirot\HttpAgent\Interfaces\iBrowserPlugin;
  *   ])
  * [code]
  */
-class BrowserPluginManager extends AbstractPlugins
+class PluginsOfBrowser
+    extends aContainerCapped
 {
-    protected $loader_resources = [
-        'form_data' => 'Poirot\HttpAgent\Browser\Plugin\BFormDataPlugin',
-        'json'      => 'Poirot\HttpAgent\Browser\Plugin\BJsonPlugin',
-    ];
-
     /**
      * @override
      *
      * Construct
      *
-     * @param iContainerBuilder $cBuilder
+     * @param BuildContainer $cBuilder
      *
      * @throws \Exception
      */
-    function __construct(iContainerBuilder $cBuilder = null)
+    function __construct(BuildContainer $cBuilder = null)
     {
         parent::__construct($cBuilder);
 
@@ -47,13 +45,13 @@ class BrowserPluginManager extends AbstractPlugins
      *
      * @param mixed $pluginInstance
      *
-     * @throws ContainerInvalidPluginException
+     * @throws exContainerInvalidServiceType
      * @return void
      */
-    function validatePlugin($pluginInstance)
+    function validateService($pluginInstance)
     {
-        if (!$pluginInstance instanceof iBrowserPlugin)
-            throw new ContainerInvalidPluginException(sprintf(
+        if (!$pluginInstance instanceof iPluginBrowser)
+            throw new exContainerInvalidServiceType(sprintf(
                 'Invalid Plugin Provided For (%s).'
                 , \Poirot\Std\flatten($pluginInstance)
             ));

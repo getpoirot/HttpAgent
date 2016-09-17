@@ -2,23 +2,31 @@
 namespace Poirot\HttpAgent\Transporter\Listeners;
 
 use Poirot\Events\Listener\aListener;
+
 use Poirot\Http\Header\FactoryHttpHeader;
+use Poirot\Http\HttpRequest;
 use Poirot\Http\Interfaces\iHttpRequest;
-use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
+
 use Poirot\Stream\Interfaces\iStreamable;
+
+use Poirot\HttpAgent\Transporter\TransporterHttpSocket;
 
 
 class onRequestPrepareSend 
     extends aListener
 {
     /**
-     * @param HttpSocketTransporter $transporter
+     * @param TransporterHttpSocket $transporter
      * @param iHttpRequest          $request
      *
      * @return mixed
      */
     function __invoke($transporter = null, $request = null)
     {
+        if (!$request instanceof HttpRequest)
+            // Nothing to do
+            return;
+        
         # Header Content-Length:
 
         /**
@@ -39,7 +47,7 @@ class onRequestPrepareSend
 
         if ($length !== false) {
             if (!$request->headers()->has('Content-Length'))
-                $request->headers()->insert(FactoryHttpHeader::of(array('Content-Length' => (string) $length)));
+                $request->headers()->insert(FactoryHttpHeader::of( array('Content-Length' => (string) $length) ));
         }
     }
 }

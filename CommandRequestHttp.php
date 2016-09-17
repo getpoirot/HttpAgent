@@ -1,10 +1,35 @@
 <?php
 namespace Poirot\HttpAgent;
 
+use Traversable;
+
+use Psr\Http\Message\StreamInterface;
+
 use Poirot\ApiClient\Request\Command;
+
 use Poirot\Http\Header\CollectionHeader;
 use Poirot\Http\Interfaces\iHeaders;
+
 use Poirot\Stream\Interfaces\iStreamable;
+
+use Poirot\HttpAgent\Browser\DataOptionsBrowser;
+use Poirot\Stream\Psr\StreamBridgeFromPsr;
+use Poirot\Stream\Streamable;
+
+
+/*CommandRequestHttp([
+    'uri' => '/',
+    'method'  => HttpRequest::METHOD_GET,
+    'browser_options' => [
+        'base_url'   => 'http://raya-media.com/page',
+        'user_agent' => 'Payam Browser',
+        'connection_options' => [
+            'time_out' => 10,
+            'persist'  => true,
+            'allow_decoding' => false,
+        ],
+    ]
+])*/
 
 class CommandRequestHttp
     extends Command
@@ -17,10 +42,32 @@ class CommandRequestHttp
     /** @var iStreamable|string|null */
     protected $body;
 
-    /** @var BrowserOptions Browser Specific Options */
+    /** @var DataOptionsBrowser Browser Specific Options */
     protected $browserOptions;
 
 
+    /**
+     * Construct
+     *
+     * @param array|\Traversable $options
+     */
+    function __construct($options = null)
+    {
+        if ($options instanceof Traversable)
+            $options = \Poirot\Std\cast($options)->toArray();
+
+        if (!is_array($options))
+            throw new \InvalidArgumentException(sprintf(
+                'Options must be array or Traversable; given: (%s).'
+                , \Poirot\Std\flatten($options)
+            ));
+        
+        if (!isset($options['arguments']))
+            $options['arguments'] = $options;
+        
+        parent::__construct($options);
+    }
+    
     // override:
 
     /**
@@ -71,6 +118,7 @@ class CommandRequestHttp
     {
         throw new \Exception('Not Implemented.');
     }
+    
     
     // options:
 
@@ -132,27 +180,37 @@ class CommandRequestHttp
     }
 
     /**
-     * @return CollectionHeader
+     * @return iHeaders|array|null
      */
     function getHeaders()
     {
-        if (!$this->headers)
-            $this->headers = new CollectionHeader();
-        
         return $this->headers;
     }
 
     /**
      * Set Request Body
-     * @param string|iStreamable $body
+     * @param string|iStreamable|StreamInterface $body
+     * @return $this
      */
     function setBody($body)
     {
+        if ($body instanceof StreamInterface) {
+            // Convert PSR Stream into Poirot
+            $body = new StreamBridgeFromPsr($body);
+        } elseif (\Poirot\Std\isStringify($body)) {
+            $body = new Streamable\STemporary($body);
+        } elseif ($body !== null && !$body instanceof iStreamable)
+            throw new \InvalidArgumentException(sprintf(
+                'Request Body Must instanceof StreamInterface PSR, iStreamable or be string or null. given: (%s).'
+                , \Poirot\Std\flatten($body)
+            ));
+
         $this->body = $body;
+        return $this;
     }
 
     /**
-     * @return null|string|iStreamable
+     * @return null|iStreamable
      */
     function getBody()
     {
@@ -161,7 +219,10 @@ class CommandRequestHttp
 
     /**
      * Set Browser Specific Options
-     * @param array|\Traversable|BrowserOptions $browserOptions
+     * 
+     * note: also registered platform plugins options include here
+     * 
+     * @param array|\Traversable|DataOptionsBrowser $browserOptions
      * @return $this
      */
     function setBrowserOptions($browserOptions)
@@ -171,12 +232,16 @@ class CommandRequestHttp
     }
 
     /**
-     * @return BrowserOptions
+     * Get Browser Specific Options
+     *
+     * note: also registered platform plugins options include here
+     * 
+     * @return DataOptionsBrowser
      */
     function getBrowserOptions()
     {
         if (!$this->browserOptions)
-            $this->browserOptions = new BrowserOptions;
+            $this->browserOptions = new DataOptionsBrowser;
 
         return $this->browserOptions;
     }

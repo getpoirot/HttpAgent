@@ -16,6 +16,6 @@ use Poirot\Std\Interfaces\Struct\iDataOptions;
  * [code]
  */
 
-interface iBrowserPlugin 
+interface iPluginBrowser
     extends iDataOptions
 { }

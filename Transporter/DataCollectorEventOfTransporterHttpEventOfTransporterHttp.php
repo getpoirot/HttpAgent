@@ -3,7 +3,7 @@ namespace Poirot\HttpAgent\Transporter;
 
 use Poirot\Std\Struct\DataOptionsOpen;
 
-class TransporterHttpEventCollector 
+class DataCollectorEventOfTransporterHttp
     extends DataOptionsOpen
 {
     protected $response;

@@ -1,19 +1,21 @@
 <?php
 namespace Poirot\HttpAgent\Transporter;
 
-use Poirot\Connection\Http\HttpSocketConnection;
-use Poirot\Std\Interfaces\Struct\iDataStruct;
-use Poirot\Http\Interfaces\Message\iHttpRequest;
-use Poirot\Http\Message\HttpRequest;
-use Poirot\Http\Message\HttpResponse;
-use Poirot\Http\Psr\Interfaces\RequestInterface;
-use Poirot\HttpAgent\Interfaces\iHttpTransporter;
+use Poirot\Connection\Http\ConnectionHttpSocket;
+
+use Poirot\Http\HttpResponse;
+
+use Poirot\Http\Interfaces\iHttpRequest;
+use Poirot\Http\Psr\RequestBridgeInPsr;
+use Poirot\Stream\Interfaces\iStreamable;
+use Poirot\Stream\Streamable;
+
+use Poirot\HttpAgent\Interfaces\iTransporterHttp;
 use Poirot\HttpAgent\Transporter\Listeners\onEventsCloseConnection;
 use Poirot\HttpAgent\Transporter\Listeners\onRequestPrepareSend;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseBodyReceived;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseHeadersReceived;
-use Poirot\Stream\Interfaces\iStreamable;
-use Poirot\Stream\Streamable;
+
 
 /*
 $request = (new HttpRequest(['method' => 'GET', 'host' => 'raya-media.com', 'headers' => [
@@ -35,8 +37,9 @@ kd($response->toString());
 
 // TODO Abstract HttpAgent Transporter
 
-class HttpSocketTransporter extends HttpSocketConnection
-    implements iHttpTransporter
+class TransporterHttpSocket 
+    extends ConnectionHttpSocket
+    implements iTransporterHttp
 {
     /** @var Streamable When Connected */
     protected $streamable;
@@ -48,7 +51,7 @@ class HttpSocketTransporter extends HttpSocketConnection
 
     /**
      * Write Received Server Data To It Until Complete
-     * @var Streamable\TemporaryStream */
+     * @var Streamable\STemporary */
     protected $_buffer;
     protected $_buffer_seek = 0; # current buffer write position
     /** @var HttpResponse */
@@ -63,7 +66,7 @@ class HttpSocketTransporter extends HttpSocketConnection
      *
      * - pass connection options on construct
      *
-     * @param array|iDataStruct $options Connection Options
+     * @param array|\Traversable $options Connection Options
      */
     function __construct($options = null)
     {
@@ -72,58 +75,44 @@ class HttpSocketTransporter extends HttpSocketConnection
     }
 
     /**
-     * Before Send Prepare Expression
-     * @param mixed $expr
-     * @return iStreamable|string
+     * @override IDE Completion
+     *
+     * @param iHttpRequest $expr
+     *
+     * @return $this
      */
-    function onBeforeSendPrepareExpression($expr)
+    function request($expr)
     {
-        if ($expr instanceof RequestInterface || is_string($expr))
-            ## convert PSR request to Poirot
-            $expr = new HttpRequest($expr);
-
         if (!$expr instanceof iHttpRequest)
             throw new \InvalidArgumentException(sprintf(
-                'Request Expression must be string, iHttpRequest or RequestInterface. given: (%s).'
+                'Expression must instance of iHttpRequest; given: (%s).'
                 , \Poirot\Std\flatten($expr)
             ));
 
-
-        // ...
-
+        $this->expr = $expr;
+        return $this;
+    }
+    
+    /**
+     * Before Send Prepare Expression
+     * 
+     * @param mixed $expr
+     * 
+     * @return iStreamable
+     */
+    function triggerBeforeSendPrepareExpression($expr)
+    {
         ## handle prepare request headers event
-        $httpRequest = $expr;
-        $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_REQUEST_SEND_PREPARE, [
+        $httpRequest = clone $expr;
+        $this->event()->trigger(TransporterHttpEvents::EVENT_REQUEST_PREPARE_EXPRESSION, array(
             'request'     => $httpRequest,
             'transporter' => $this,
-        ]);
+        ));
+        
         /** @var iHttpRequest $expr */
-        $expr = $httpRequest = $emitter->collector()->getRequest();
-
-        if ($httpRequest instanceof iHttpRequest)
-        {
-            # ! # support for large body streams
-
-            /** @var Streamable\AggregateStream $expr */
-            $expr = new Streamable\AggregateStream;
-
-            $expr->addStream(
-                (new Streamable\TemporaryStream(
-                    $httpRequest->renderRequestLine()
-                    . $httpRequest->renderHeaders()
-                ))->rewind()
-            );
-
-            $body = $httpRequest->getBody();
-            if ($body !== null || $body !== '') {
-                if (!$body instanceof iStreamable)
-                    $body = new Streamable\TemporaryStream($body);
-
-                $expr->addStream($body->rewind());
-            }
-        }
-
-        return $expr;
+        $expr = $httpRequest;
+        $expr = new RequestBridgeInPsr($expr);
+        return parent::triggerBeforeSendPrepareExpression($expr);
     }
 
     /**
@@ -133,14 +122,14 @@ class HttpSocketTransporter extends HttpSocketConnection
      *
      * @return boolean consider continue with reading body from stream?
      */
-    function onResponseHeaderReceived(&$responseHeaders)
+    function triggerResponseHeaderReceived(&$responseHeaders)
     {
         $responseHeaders = new HttpResponse($responseHeaders);
-        $emitter  = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, [
-            'response'    => $responseHeaders,
+        $emitter  = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, array(
+            'response'    => &$responseHeaders,
             'transporter' => $this,
-            'request'     => $this->getRequest(),
-        ]);
+            'request'     => $this->getLastRequest(),
+        ));
 
         ## consider terminate receive body
         return $emitter->collector()->getContinue();
@@ -159,15 +148,15 @@ class HttpSocketTransporter extends HttpSocketConnection
     {
         /** @var HttpResponse $responseHeaders */
 
-        $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED, [
+        $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED, array(
             'response'    => $responseHeaders,
             'transporter' => $this,
 
             'body'        => $body,
 
-            'request'     => $this->getRequest(),
+            'request'     => $this->getLastRequest(),
             'continue'    => false, ## no more request by default
-        ]);
+        ));
 
         $bodyStream = $emitter->collector()->getBody();
         $responseHeaders->setBody($bodyStream);
@@ -204,9 +193,11 @@ class HttpSocketTransporter extends HttpSocketConnection
         return $this->event;
     }
 
+    
+    
     /**
      * @override just for ide completion
-     * @return HttpTransporterOptions
+     * @return TransporterHttpOptions
      */
     function optsData()
     {
@@ -215,11 +206,11 @@ class HttpSocketTransporter extends HttpSocketConnection
 
     /**
      * @override
-     * @return HttpTransporterOptions
+     * @return TransporterHttpOptions
      */
     static function newOptsData($builder = null)
     {
-        return new HttpTransporterOptions($builder);
+        return new TransporterHttpOptions($builder);
     }
 
 
@@ -228,7 +219,7 @@ class HttpSocketTransporter extends HttpSocketConnection
     protected function __attachDefaultListeners()
     {
         $this->event()->on(
-            TransporterHttpEvents::EVENT_REQUEST_SEND_PREPARE
+            TransporterHttpEvents::EVENT_REQUEST_PREPARE_EXPRESSION
             , new onRequestPrepareSend
             , 100
         );

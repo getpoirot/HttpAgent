@@ -11,8 +11,10 @@
     ],
     "require": {
         "poirot/std": "dev-devel"
+        , "poirot/ioc": "dev-devel"
         , "poirot/api-client": "dev-devel"
         , "poirot/http": "dev-devel"
+        , "poirot/psr7-http": "dev-devel"
         , "poirot/events": "dev-devel"
     },
     "target-dir": "Poirot/HttpAgent"

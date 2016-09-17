@@ -2,27 +2,31 @@
 namespace Poirot\HttpAgent\Transporter\Listeners;
 
 use Poirot\Connection\Http\StreamFilter\DechunkFilter;
+
 use Poirot\Events\Listener\aListener;
+
 use Poirot\Http\HttpResponse;
 use Poirot\Http\Interfaces\iHttpRequest;
-use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
+
 use Poirot\Stream\Filter\FilterStreamPhpBuiltin;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
+
+use Poirot\HttpAgent\Transporter\TransporterHttpSocket;
+
 
 class onResponseBodyReceived 
     extends aListener
 {
     /**
-     * @param HttpSocketTransporter $transporter
+     * @param TransporterHttpSocket $transporter
      * @param iStreamable           $body
      * @param HttpResponse          $response
-     * @param Streamable            $stream
      * @param iHttpRequest          $request
      *
      * @return mixed
      */
-    function __invoke($transporter = null, $body = null, $response = null, $stream = null, $request = null)
+    function __invoke($transporter = null, $body = null, $response = null, $request = null)
     {
         $headers = $response->headers();
 

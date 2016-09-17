@@ -2,19 +2,26 @@
 namespace Poirot\HttpAgent\Interfaces;
 
 use Poirot\Connection\Exception\ApiCallException;
-use Poirot\Connection\Exception\ConnectException;
 use Poirot\Connection\Interfaces\iConnection;
+
 use Poirot\Events\Interfaces\Respec\iEventProvider;
+
 use Poirot\Http\HttpResponse;
 use Poirot\Http\Interfaces\iHttpRequest;
-use Poirot\HttpAgent\Transporter\HttpTransporterOptions;
-use Poirot\HttpAgent\Transporter\TransporterHttpEvents;
 use Psr\Http\Message\RequestInterface;
 
-interface iHttpTransporter
+use Poirot\HttpAgent\Transporter\TransporterHttpEvents;
+
+
+interface iTransporterHttp
     extends iConnection
     , iEventProvider
 {
+    // Note: Interfaces Override for IDE Completion
+    
+    
+    // Implement iConnection:
+    
     /**
      * Send Expression To Server
      *
@@ -47,8 +54,11 @@ interface iHttpTransporter
      *
      * @return null|iHttpRequest|RequestInterface|string
      */
-    function getRequest();
+    function getLastRequest();
 
+    
+    // Implement iTransporterHttp
+    
     /**
      * Is Request Complete
      *
@@ -59,7 +69,8 @@ interface iHttpTransporter
      */
     function isRequestComplete();
 
-    // ...
+    
+    // Implement iEventProvider
 
     /**
      * Get Events
@@ -67,18 +78,4 @@ interface iHttpTransporter
      * @return TransporterHttpEvents
      */
     function event();
-
-    // ...
-
-    /**
-     * @override just for ide completion
-     * @return HttpTransporterOptions
-     */
-    // function inOptions();
-
-    /**
-     * @override
-     * @return HttpTransporterOptions
-     */
-    // static function newOptions($builder = null);
 }

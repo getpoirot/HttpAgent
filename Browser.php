@@ -2,15 +2,21 @@
 namespace Poirot\HttpAgent;
 
 use Poirot\ApiClient\aClient;
-use Poirot\ApiClient\Interfaces\Request\iApiMethod;
+use Poirot\ApiClient\Interfaces\Request\iApiCommand;
+
 use Poirot\Connection\Interfaces\iConnection;
+
 use Poirot\Http\HttpRequest;
 use Poirot\Http\Interfaces\iHeaders;
-use Poirot\HttpAgent\Browser\HttpPlatform;
-use Poirot\HttpAgent\Browser\ResponsePlatform;
-use Poirot\HttpAgent\Transporter\HttpSocketTransporter;
+
+use Poirot\HttpAgent\Platform\PlatformHttp;
+use Poirot\HttpAgent\Platform\ResponsePlatform;
 use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
+
 use Poirot\Stream\Interfaces\iStreamable;
+
+use Poirot\HttpAgent\Browser\DataOptionsBrowser;
+use Poirot\HttpAgent\Transporter\TransporterHttpSocket;
 
 /*
 $browser = new Browser('http://google.com/about', [
@@ -66,13 +72,14 @@ $browser->custom(
 class Browser extends aClient
     implements ipOptionsProvider
 {
-    /** @var HttpSocketTransporter|iConnection*/
+    /** @var TransporterHttpSocket|iConnection*/
     protected $transporter;
-    /** @var HttpPlatform */
+    /** @var PlatformHttp */
     protected $platform;
 
-    /** @var BrowserOptions */
+    /** @var DataOptionsBrowser */
     protected $options;
+
 
     /**
      * Construct
@@ -83,8 +90,8 @@ class Browser extends aClient
      *    'connection_options'  => ['time_out' => 20]
      * ]);
      *
-     * @param BrowserOptions|\Traversable|null|string $baseUrlOrOptions
-     * @param array|null                              $ops               Options when using as base_url
+     * @param DataOptionsBrowser|\Traversable|null|string $baseUrlOrOptions
+     * @param array|null                                  $ops               Options when using as base_url
      */
     function __construct($baseUrlOrOptions = null, $ops = null)
     {
@@ -103,26 +110,29 @@ class Browser extends aClient
      * - used by request to build params for
      *   server execution call and response
      *
-     * @return HttpPlatform
+     * @return PlatformHttp
      */
     function platform()
     {
         if (!$this->platform)
-            $this->platform = new HttpPlatform($this);
+            // Bind same object options into Platform to sync. changes!!
+            $this->platform = new PlatformHttp;
 
+        $this->platform->optsData()->clean()->import($this->optsData());
         return $this->platform;
     }
 
     /**
      * Get Connection Adapter
      *
-     * @return HttpSocketTransporter
+     * @return TransporterHttpSocket
      */
     function transporter()
     {
         if (!$this->transporter)
-            $this->transporter = new HttpSocketTransporter($this->optsData()->getConnectionOptions());
+            $this->transporter = new TransporterHttpSocket;
 
+        $this->transporter->optsData()->clean()->import($this->optsData()->getConnectionOptions());
         return $this->transporter;
     }
 
@@ -136,7 +146,7 @@ class Browser extends aClient
      */
     function GET($uri, $options = null, $headers = null)
     {
-        return $this->__makeRequestCall(HttpRequest::METHOD_GET, $uri, $options, null, $headers);
+        return $this->_makeRequestCall(HttpRequest::METHOD_GET, $uri, $options, null, $headers);
     }
 
     /**
@@ -147,7 +157,7 @@ class Browser extends aClient
      */
     function HEAD($uri, $options = null, $headers = null)
     {
-        return $this->__makeRequestCall(HttpRequest::METHOD_HEAD, $uri, $options, null, $headers);
+        return $this->_makeRequestCall(HttpRequest::METHOD_HEAD, $uri, $options, null, $headers);
     }
 
     /**
@@ -159,7 +169,7 @@ class Browser extends aClient
      */
     function POST($uri, $options = null, $body = null, $headers = null)
     {
-        return $this->__makeRequestCall(HttpRequest::METHOD_POST, $uri, $options, $body, $headers);
+        return $this->_makeRequestCall(HttpRequest::METHOD_POST, $uri, $options, $body, $headers);
     }
 
     /**
@@ -171,7 +181,7 @@ class Browser extends aClient
      */
     function PUT($uri, $options = null, $body = null, $headers = null)
     {
-        return $this->__makeRequestCall(HttpRequest::METHOD_PUT, $uri, $options, $body, $headers);
+        return $this->_makeRequestCall(HttpRequest::METHOD_PUT, $uri, $options, $body, $headers);
     }
 
     /**
@@ -184,7 +194,7 @@ class Browser extends aClient
      */
     function PATCH($uri, $options = null, $body = null, $headers = null)
     {
-        return $this->__makeRequestCall(HttpRequest::METHOD_PATCH, $uri, $options, $body, $headers);
+        return $this->_makeRequestCall(HttpRequest::METHOD_PATCH, $uri, $options, $body, $headers);
     }
 
     /**
@@ -193,7 +203,7 @@ class Browser extends aClient
      */
     function DELETE($uri, $options = null, $headers = null)
     {
-        return $this->__makeRequestCall(HttpRequest::METHOD_DELETE, $uri, $options, null, $headers);
+        return $this->_makeRequestCall(HttpRequest::METHOD_DELETE, $uri, $options, null, $headers);
     }
 
     /**
@@ -205,7 +215,7 @@ class Browser extends aClient
      */
     function OPTIONS($uri, $options = null, $headers = null)
     {
-        return $this->__makeRequestCall(HttpRequest::METHOD_OPTIONS, $uri, $options, null, $headers);
+        return $this->_makeRequestCall(HttpRequest::METHOD_OPTIONS, $uri, $options, null, $headers);
     }
 
     /**
@@ -216,7 +226,7 @@ class Browser extends aClient
      */
     function CONNECT($uri, $options = null, $headers = null)
     {
-        return $this->__makeRequestCall(HttpRequest::METHOD_CONNECT, $uri, $options, null, $headers);
+        return $this->_makeRequestCall(HttpRequest::METHOD_CONNECT, $uri, $options, null, $headers);
     }
 
     /**
@@ -227,7 +237,7 @@ class Browser extends aClient
      */
     function TRACE($uri, $options = null, $headers = null)
     {
-        return $this->__makeRequestCall(HttpRequest::METHOD_TRACE, $uri, $options, null, $headers);
+        return $this->_makeRequestCall(HttpRequest::METHOD_TRACE, $uri, $options, null, $headers);
     }
 
     /**
@@ -241,7 +251,7 @@ class Browser extends aClient
     function request(HttpRequest $request, $options = null)
     {
         $uri = $request->getTarget();
-        return $this->__makeRequestCall($request->getMethod(), $uri, $options, $request->getBody(), $request->headers());
+        return $this->_makeRequestCall($request->getMethod(), $uri, $options, $request->getBody(), $request->headers());
     }
 
     /**
@@ -255,7 +265,7 @@ class Browser extends aClient
      *
      * @return ResponsePlatform
      */
-    protected function __makeRequestCall($method, $uri, $options=null, $body=null, $headers=null)
+    protected function _makeRequestCall($method, $uri, $options=null, $body=null, $headers=null)
     {
         $command = new CommandRequestHttp();
         $command->setMethod($method);
@@ -269,10 +279,11 @@ class Browser extends aClient
         return $response;
     }
 
+    
     // ...
 
     /**
-     * @return BrowserOptions
+     * @return DataOptionsBrowser
      */
     function optsData()
     {
@@ -296,11 +307,11 @@ class Browser extends aClient
      *
      * @param null|mixed $builder Builder Options as Constructor
      *
-     * @return BrowserOptions
+     * @return DataOptionsBrowser
      */
     static function newOptsData($builder = null)
     {
-        return new BrowserOptions($builder);
+        return new DataOptionsBrowser($builder);
     }
 
 
@@ -308,15 +319,16 @@ class Browser extends aClient
 
     /**
      * @override Ide Completion
-     * @param iApiMethod $method
+     * @param iApiCommand $method
      * @return ResponsePlatform
      */
-    function call(iApiMethod $method)
+    function call(iApiCommand $method)
     {
         $return = parent::call($method);
         return $return;
     }
 
+    
     /**
      * @override Ide Completion
      * @param string $methodName
@@ -326,7 +338,7 @@ class Browser extends aClient
     function __call($methodName, $args)
     {
         ## Named arguments
-        /*ReqMethod([
+        /*CommandRequestHttp([
             'uri' => '/',
             'method'  => HttpRequest::METHOD_GET,
             'browser' => [
@@ -344,7 +356,7 @@ class Browser extends aClient
         // method()($uri, $headers = null, $body = null, $options = null)
         if (count($args) >= 0 && isset($args[0]) && !is_array($args[0])) {
             $curr = $args;
-            $args = [];
+            $args = array();
             (!isset($curr[0])) ?: $args['uri']     = $curr[0];
             (!isset($curr[1])) ?: $args['browser'] = $curr[1];
             (!isset($curr[2])) ?: $args['body']    = $curr[2];
