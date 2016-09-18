@@ -35,11 +35,13 @@ class CommandRequestHttp
     extends Command
 {
     protected $method = 'GET';
+    /** @var string */
+    protected $host;
     /** @var string Request Target Uri */
-    protected $uri;
-    /** @var iHeaders|CollectionHeader */
+    protected $target;
+    /** @var array */
     protected $headers;
-    /** @var iStreamable|string|null */
+    /** @var StreamInterface|string|null */
     protected $body;
 
     /** @var DataOptionsBrowser Browser Specific Options */
@@ -100,7 +102,8 @@ class CommandRequestHttp
     {
         $args = array(
             'method'  => $this->getMethod(),
-            'uri'     => $this->getUri(),
+            'host'    => $this->getHost(),
+            'uri'     => $this->getTarget(),
             'headers' => $this->getHeaders(),
             'body'    => $this->getBody(),
             'browser_options' => $this->getBrowserOptions(),
@@ -131,7 +134,7 @@ class CommandRequestHttp
      */
     function setMethod($method)
     {
-        $this->method = strtoupper((string) $method);
+        $this->method = (string) $method;
         return $this;
     }
 
@@ -144,43 +147,61 @@ class CommandRequestHttp
     }
 
     /**
-     * Set Request Uri To Server
+     * Host Name Include Protocol Scheme
+     * exp. http://host-name.com or host-name.com
      *
-     * @param string $uri
+     * default protocol is http
+     *
+     * @param string $host
      * @return $this
      */
-    function setUri($uri)
+    function setHost($host)
     {
-        $this->uri = (string) $uri;
+        $this->host = (string) $host;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    function getHost()
+    {
+        return $this->host;
+    }
+
+    /**
+     * Set Request Target Uri To Server
+     * exp. /path/to/resource
+     *
+     * @param string $target
+     * @return $this
+     */
+    function setTarget($target)
+    {
+        $this->target = (string) $target;
         return $this;
     }
 
     /**
      * @return string|null
      */
-    function getUri()
+    function getTarget()
     {
-        return $this->uri;
+        return $this->target;
     }
 
     /**
-     * @param iHeaders|array $headers
+     * @param array $headers ['headerName'=>$value, ]
      * @return $this
      */
     function setHeaders($headers)
     {
-        if (is_array($headers))
-            $headers = new CollectionHeader($headers);
-
-        if (!$headers instanceof iHeaders)
-            throw new \InvalidArgumentException;
-
         $this->headers = $headers;
         return $this;
     }
 
     /**
-     * @return iHeaders|array|null
+     * @return array|null
      */
     function getHeaders()
     {
@@ -189,28 +210,18 @@ class CommandRequestHttp
 
     /**
      * Set Request Body
-     * @param string|iStreamable|StreamInterface $body
+     * @param string|StreamInterface $body
      * @return $this
      */
     function setBody($body)
     {
-        if ($body instanceof StreamInterface) {
-            // Convert PSR Stream into Poirot
-            $body = new StreamBridgeFromPsr($body);
-        } elseif (\Poirot\Std\isStringify($body)) {
-            $body = new Streamable\STemporary($body);
-        } elseif ($body !== null && !$body instanceof iStreamable)
-            throw new \InvalidArgumentException(sprintf(
-                'Request Body Must instanceof StreamInterface PSR, iStreamable or be string or null. given: (%s).'
-                , \Poirot\Std\flatten($body)
-            ));
-
         $this->body = $body;
         return $this;
     }
 
     /**
-     * @return null|iStreamable
+     * Get Request Body
+     * @return null|StreamInterface
      */
     function getBody()
     {
@@ -219,9 +230,9 @@ class CommandRequestHttp
 
     /**
      * Set Browser Specific Options
-     * 
+     *
      * note: also registered platform plugins options include here
-     * 
+     *
      * @param array|\Traversable|DataOptionsBrowser $browserOptions
      * @return $this
      */
@@ -235,7 +246,7 @@ class CommandRequestHttp
      * Get Browser Specific Options
      *
      * note: also registered platform plugins options include here
-     * 
+     *
      * @return DataOptionsBrowser
      */
     function getBrowserOptions()

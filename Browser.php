@@ -9,14 +9,16 @@ use Poirot\Connection\Interfaces\iConnection;
 use Poirot\Http\HttpRequest;
 use Poirot\Http\Interfaces\iHeaders;
 
-use Poirot\HttpAgent\Platform\PlatformHttp;
-use Poirot\HttpAgent\Platform\ResponsePlatform;
 use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
 
 use Poirot\Stream\Interfaces\iStreamable;
 
 use Poirot\HttpAgent\Browser\DataOptionsBrowser;
 use Poirot\HttpAgent\Transporter\TransporterHttpSocket;
+use Poirot\HttpAgent\Platform\PlatformHttp;
+use Poirot\HttpAgent\Platform\ResponsePlatform;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
 
 /*
 $browser = new Browser('http://google.com/about', [
@@ -70,15 +72,18 @@ $browser->custom(
  * TODO decompress gzip response with chunked data not working
  */
 class Browser extends aClient
-    implements ipOptionsProvider
 {
     /** @var TransporterHttpSocket|iConnection*/
     protected $transporter;
     /** @var PlatformHttp */
     protected $platform;
 
-    /** @var DataOptionsBrowser */
-    protected $options;
+    # options
+    /** @var string Base Url to Server */
+    protected $baseUrl;
+    protected $userAgent;
+    /** @var array */
+    protected $pluginOptions;
 
 
     /**
@@ -96,12 +101,11 @@ class Browser extends aClient
     function __construct($baseUrlOrOptions = null, $ops = null)
     {
         if ($baseUrlOrOptions !== null && is_string($baseUrlOrOptions))
-            $this->optsData()->setBaseUrl($baseUrlOrOptions);
+            $this->setBaseUrl($baseUrlOrOptions);
         elseif ($baseUrlOrOptions !== null)
             $ops = $baseUrlOrOptions;
 
-        if ($ops !== null)
-            $this->optsData()->import($ops);
+        parent::__construct($ops);
     }
 
     /**
@@ -136,9 +140,37 @@ class Browser extends aClient
         return $this->transporter;
     }
 
-
-    // ...
+    /**
+     * @override Ide Completion
+     * @param iApiCommand $command
+     * @return ResponsePlatform
+     */
+    function call(iApiCommand $command)
+    {
+        $return = parent::call($command);
+        return $return;
+    }
     
+    /**
+     * Send Http Request Message
+     *
+     * @param RequestInterface $request
+     * @param null             $options
+     *
+     * @return ResponsePlatform
+     */
+    function request(RequestInterface $request, $options = null)
+    {
+        $uri     = $request->getRequestTarget();
+        $headers = array();
+        foreach ($request->getHeaders() as $name => $_)
+            $headers[$name] = $request->getHeaderLine($name);
+
+        $command = $this->_makeRequestCommand($request->getMethod(), $uri, $options, $request->getBody(), $headers);
+        return $this->call($command);
+    }
+
+
     /** @link http://www.tutorialspoint.com/http/http_methods.htm */
 
     /**
@@ -146,7 +178,8 @@ class Browser extends aClient
      */
     function GET($uri, $options = null, $headers = null)
     {
-        return $this->_makeRequestCall(HttpRequest::METHOD_GET, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand(HttpRequest::METHOD_GET, $uri, $options, null, $headers);
+        return $this->call($command);
     }
 
     /**
@@ -157,7 +190,8 @@ class Browser extends aClient
      */
     function HEAD($uri, $options = null, $headers = null)
     {
-        return $this->_makeRequestCall(HttpRequest::METHOD_HEAD, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand(HttpRequest::METHOD_HEAD, $uri, $options, null, $headers);
+        return $this->call($command);
     }
 
     /**
@@ -169,7 +203,8 @@ class Browser extends aClient
      */
     function POST($uri, $options = null, $body = null, $headers = null)
     {
-        return $this->_makeRequestCall(HttpRequest::METHOD_POST, $uri, $options, $body, $headers);
+        $command = $this->_makeRequestCommand(HttpRequest::METHOD_POST, $uri, $options, $body, $headers);
+        return $this->call($command);
     }
 
     /**
@@ -181,7 +216,8 @@ class Browser extends aClient
      */
     function PUT($uri, $options = null, $body = null, $headers = null)
     {
-        return $this->_makeRequestCall(HttpRequest::METHOD_PUT, $uri, $options, $body, $headers);
+        $command = $this->_makeRequestCommand(HttpRequest::METHOD_PUT, $uri, $options, $body, $headers);
+        return $this->call($command);
     }
 
     /**
@@ -194,7 +230,8 @@ class Browser extends aClient
      */
     function PATCH($uri, $options = null, $body = null, $headers = null)
     {
-        return $this->_makeRequestCall(HttpRequest::METHOD_PATCH, $uri, $options, $body, $headers);
+        $command = $this->_makeRequestCommand(HttpRequest::METHOD_PATCH, $uri, $options, $body, $headers);
+        return $this->call($command);
     }
 
     /**
@@ -203,7 +240,8 @@ class Browser extends aClient
      */
     function DELETE($uri, $options = null, $headers = null)
     {
-        return $this->_makeRequestCall(HttpRequest::METHOD_DELETE, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand(HttpRequest::METHOD_DELETE, $uri, $options, null, $headers);
+        return $this->call($command);
     }
 
     /**
@@ -215,7 +253,8 @@ class Browser extends aClient
      */
     function OPTIONS($uri, $options = null, $headers = null)
     {
-        return $this->_makeRequestCall(HttpRequest::METHOD_OPTIONS, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand(HttpRequest::METHOD_OPTIONS, $uri, $options, null, $headers);
+        return $this->call($command);
     }
 
     /**
@@ -226,7 +265,8 @@ class Browser extends aClient
      */
     function CONNECT($uri, $options = null, $headers = null)
     {
-        return $this->_makeRequestCall(HttpRequest::METHOD_CONNECT, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand(HttpRequest::METHOD_CONNECT, $uri, $options, null, $headers);
+        return $this->call($command);
     }
 
     /**
@@ -237,97 +277,120 @@ class Browser extends aClient
      */
     function TRACE($uri, $options = null, $headers = null)
     {
-        return $this->_makeRequestCall(HttpRequest::METHOD_TRACE, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand(HttpRequest::METHOD_TRACE, $uri, $options, null, $headers);
+        return $this->call($command);
     }
 
+
+    // Options:
+
     /**
-     * Send Http Request Message
+     * exp.
      *
-     * @param HttpRequest $request
-     * @param null $options
+     *   http://site-name.com/
+     *   http://site-name.com/basepath/
      *
-     * @return ResponsePlatform
+     * @param string $baseUrl
+     * @return $this
      */
-    function request(HttpRequest $request, $options = null)
+    function setBaseUrl($baseUrl)
     {
-        $uri = $request->getTarget();
-        return $this->_makeRequestCall($request->getMethod(), $uri, $options, $request->getBody(), $request->headers());
+        $this->baseUrl = (string) $baseUrl;
+        return $this;
     }
 
     /**
-     * Make Request Method Call To Server
-     *
-     * @param string                  $method  Request Method
-     * @param string                  $uri     Absolute Uri Or Relative To BaseUrl
-     * @param array|\Traversable|null $options Browser Options Or Open Options Used By Plugins
-     * @param iStreamable|string|null $body    Request Body
-     * @param array|iHeaders|null     $headers Specific Request Header/Replace Defaults
-     *
-     * @return ResponsePlatform
+     * @return string|null
      */
-    protected function _makeRequestCall($method, $uri, $options=null, $body=null, $headers=null)
+    function getBaseUrl()
+    {
+        return $this->baseUrl;
+    }
+
+
+    /**
+     * @param mixed $userAgent
+     * @return $this
+     */
+    function setUserAgent($userAgent)
+    {
+        $this->userAgent = (string) $userAgent;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    function getUserAgent()
+    {
+        if (!$this->userAgent || $this->userAgent === VOID) {
+            $userAgent = '';
+
+            if (!$userAgent) {
+                $userAgent = 'PoirotBrowser';
+                $userAgent .= '-PHP/' . PHP_VERSION;
+            }
+
+            $this->setUserAgent($userAgent);
+        }
+
+        return $this->userAgent;
+    }
+
+    /**
+     * Set Plugins Services Settings
+     * @see BuildContainer
+     *
+     * @param array $pluginOptions
+     *
+     * @return $this
+     */
+    function setPluginOptions(array $pluginOptions)
+    {
+        $this->pluginOptions = $pluginOptions;
+        return $this;
+    }
+
+    /**
+     * Get Plugins Setting
+     * @return array
+     */
+    function getPluginOptions()
+    {
+        return $this->pluginOptions;
+    }
+
+
+    // ...
+    
+    /**
+     * Make Request Command To Call To Server
+     *
+     * @param string                      $method  Request Method
+     * @param string                      $uri     Absolute Uri Or Relative To BaseUrl
+     * @param array|\Traversable|null     $options Browser Options Or Open Options Used By Plugins
+     * @param StreamInterface|string|null $body    Request Body
+     * @param array|iHeaders|null         $headers Specific Request Header/Replace Defaults
+     *
+     * @return CommandRequestHttp
+     */
+    protected function _makeRequestCommand($method, $uri, $options=null, $body=null, $headers=null)
     {
         $command = new CommandRequestHttp();
+
         $command->setMethod($method);
-        $command->setUri($uri);
 
-        ($options === null) ?: $command->setBrowserOptions($options);
-        ($body    === null) ?: $command->setBody($body);
-        ($headers === null) ?: $command->setHeaders($headers);
+        $command->setHost($host);
+        $command->setTarget($uri);
 
-        $response = $this->call($command);
-        return $response;
+        $command->setHeaders($headers);
+        $command->setBody($body);
+
+        // let extra options received by Platform
+        $command->setBrowserOptions($options);
+        
+        return $command;
     }
-
-    
-    // ...
-
-    /**
-     * @return DataOptionsBrowser
-     */
-    function optsData()
-    {
-        if (!$this->options)
-            $this->options = static::newOptsData();
-
-        return $this->options;
-    }
-
-    /**
-     * Get An Bare Options Instance
-     *
-     * ! it used on easy access to options instance
-     *   before constructing class
-     *   [php]
-     *      $opt = Filesystem::optionsIns();
-     *      $opt->setSomeOption('value');
-     *
-     *      $class = new Filesystem($opt);
-     *   [/php]
-     *
-     * @param null|mixed $builder Builder Options as Constructor
-     *
-     * @return DataOptionsBrowser
-     */
-    static function newOptsData($builder = null)
-    {
-        return new DataOptionsBrowser($builder);
-    }
-
-
-    // ...
-
-    /**
-     * @override Ide Completion
-     * @param iApiCommand $method
-     * @return ResponsePlatform
-     */
-    function call(iApiCommand $method)
-    {
-        $return = parent::call($method);
-        return $return;
-    }
-
     
     /**
      * @override Ide Completion

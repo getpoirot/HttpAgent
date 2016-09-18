@@ -161,7 +161,7 @@ class PlatformHttp
         
         // ...
 
-        if ($uri = $CommandRequest->getUri()) {
+        if ($uri = $CommandRequest->getTarget()) {
             ## Reset Server Base Url When Absolute Http URI Requested
             /*
              * $browser->get(
@@ -225,7 +225,7 @@ class PlatformHttp
             $baseUrl = '/';
 
         
-        $targetUri = $CommandRequest->getUri();
+        $targetUri = $CommandRequest->getTarget();
         $targetUri = rtrim($baseUrl, '/').$targetUri;
         $RequestHttp->setTarget($targetUri);
         
