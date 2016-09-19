@@ -1,7 +1,7 @@
 <?php
 namespace Poirot\HttpAgent\Interfaces;
 
-use Poirot\Http\Interfaces\iHttpResponse;
+use Psr\Http\Message\ResponseInterface;
 
 
 interface iPluginBrowserResponse
@@ -10,9 +10,9 @@ interface iPluginBrowserResponse
     /**
      * Manipulate Http Response
      *
-     * @param iHttpResponse $response
+     * @param ResponseInterface $response
      * 
-     * @return iHttpResponse Copy/Clone
+     * @return ResponseInterface|null Copy/Clone
      */
-    function withHttpResponse(iHttpResponse $response);
+    function withHttpResponse(ResponseInterface $response);
 }

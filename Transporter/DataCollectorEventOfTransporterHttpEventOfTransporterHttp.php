@@ -2,11 +2,13 @@
 namespace Poirot\HttpAgent\Transporter;
 
 use Poirot\Std\Struct\DataOptionsOpen;
+use Poirot\Stream\Interfaces\iStreamable;
 
 class DataCollectorEventOfTransporterHttp
     extends DataOptionsOpen
 {
     protected $response;
+    protected $parsedResponse;
     protected $transporter;
     protected $request;
 
@@ -17,17 +19,17 @@ class DataCollectorEventOfTransporterHttp
     /**
      * @return mixed
      */
-    function getResponse()
+    function getParsedResponse()
     {
-        return $this->response;
+        return $this->parsedResponse;
     }
 
     /**
      * @param mixed $response
      */
-    function setResponse($response)
+    function setParsedResponse($response)
     {
-        $this->response = $response;
+        $this->parsedResponse = $response;
     }
 
     /**
@@ -67,7 +69,7 @@ class DataCollectorEventOfTransporterHttp
     /**
      * @return mixed
      */
-    function getContinue()
+    function isContinue()
     {
         return $this->continue;
     }
@@ -94,5 +96,21 @@ class DataCollectorEventOfTransporterHttp
     function setBody($body)
     {
         $this->body = $body;
+    }
+
+    /**
+     * @return iStreamable
+     */
+    function getResponse()
+    {
+        return $this->response;
+    }
+
+    /**
+     * @param iStreamable $response
+     */
+    function setResponse($response)
+    {
+        $this->response = $response;
     }
 }

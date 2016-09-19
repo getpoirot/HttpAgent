@@ -4,17 +4,18 @@ namespace Poirot\HttpAgent\Transporter;
 use Poirot\Connection\Http\ConnectionHttpSocket;
 
 use Poirot\Http\HttpResponse;
-
 use Poirot\Http\Interfaces\iHttpRequest;
 use Poirot\Http\Psr\RequestBridgeInPsr;
-use Poirot\HttpAgent\Interfaces\iTransporterHttp;
+
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
 
-use Poirot\HttpAgent\Transporter\Listeners\onEventsCloseConnection;
-use Poirot\HttpAgent\Transporter\Listeners\onRequestPrepareSend;
-use Poirot\HttpAgent\Transporter\Listeners\onResponseBodyReceived;
+use Poirot\HttpAgent\Interfaces\iTransporterHttp;
+use Poirot\HttpAgent\Transporter\Listeners\onResponseReceivedCloseConnection;
+use Poirot\HttpAgent\Transporter\Listeners\onRequestPrepareExpression;
+use Poirot\HttpAgent\Transporter\Listeners\onResponseReceived;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseHeadersReceived;
+use Psr\Http\Message\RequestInterface;
 
 
 /*
@@ -35,8 +36,11 @@ $response = $stream->send($request);
 kd($response->toString());
 */
 
-// TODO Abstract HttpAgent Transporter
-
+/**
+ * Extended ConnectionHttpSocket To Add More Control Over
+ * Http Protocol.
+ * 
+ */
 class TransporterHttpSocket 
     extends ConnectionHttpSocket
     implements iTransporterHttp
@@ -71,36 +75,36 @@ class TransporterHttpSocket
     function __construct($options = null)
     {
         parent::__construct($options);
-        $this->__attachDefaultListeners();
+        
+        $this->_attachDefaultListeners();
     }
 
     /**
-     * @override IDE Completion
-     *
-     * @param iHttpRequest $expr
-     *
+     * @override Just Get RequestInterface 
+     * 
+     * @param RequestInterface $expr
+     * 
      * @return $this
      */
     function request($expr)
     {
-        if (!$expr instanceof iHttpRequest)
+        if (!$expr instanceof RequestInterface)
             throw new \InvalidArgumentException(sprintf(
-                'Expression must instance of iHttpRequest; given: (%s).'
+                'Expression must instance of RequestInterface PSR; given: (%s).'
                 , \Poirot\Std\flatten($expr)
             ));
 
-        $this->expr = $expr;
-        return $this;
+        return parent::request($expr);
     }
     
     /**
      * Before Send Prepare Expression
-     * 
-     * @param mixed $expr
-     * 
+     *
+     * @param RequestInterface $expr
+     *
      * @return iStreamable
      */
-    function triggerBeforeSendPrepareExpression($expr)
+    function makeStreamFromRequestExpression($expr)
     {
         ## handle prepare request headers event
         $httpRequest = clone $expr;
@@ -109,59 +113,54 @@ class TransporterHttpSocket
             'transporter' => $this,
         ));
         
-        /** @var iHttpRequest $expr */
-        $expr = $httpRequest;
-        $expr = new RequestBridgeInPsr($expr);
-        return parent::triggerBeforeSendPrepareExpression($expr);
+        return parent::makeStreamFromRequestExpression($expr);
     }
 
     /**
-     * $responseHeaders can be changed by reference
+     * Determine received response headers
      *
-     * @param string $responseHeaders
+     * @param array &$parsedResponse By reference
+     *        array['version'=>string, 'status'=>int, 'reason'=>string, 'headers'=>array(key=>val)]
      *
-     * @return boolean consider continue with reading body from stream?
+     * @return true|false Consider continue with reading body from stream?
      */
-    function triggerResponseHeaderReceived(&$responseHeaders)
+    function canContinueWithReceivedHeaders(&$parsedResponse)
     {
-        $responseHeaders = new HttpResponse($responseHeaders);
+        $result = parent::canContinueWithReceivedHeaders($parsedResponse);
+        
         $emitter  = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, array(
-            'response'    => &$responseHeaders,
-            'transporter' => $this,
-            'request'     => $this->getLastRequest(),
+            'parsed_response' => &$parsedResponse,
+            'transporter'     => $this,
+            'request'         => $this->getLastRequest(),
         ));
 
         ## consider terminate receive body
-        return $emitter->collector()->getContinue();
+        $result &= $emitter->collector()->isContinue();
+        
+        return $result;
     }
 
     /**
-     * Get Body And Response Headers And Return Expected Response
+     * Finalize Response Buffer
      *
-     * @param string|mixed     $responseHeaders default has headers string but it can changed
-     *                                          with onResponseHeaderReceived
-     * @param iStreamable|null $body
+     * @param iStreamable $response
+     * @param array       $parsedResponse
      *
-     * @return mixed Expected Response
+     * @return iStreamable
      */
-    function onResponseReceivedComplete($responseHeaders, $body)
+    function finalizeResponseFromStream($response, $parsedResponse)
     {
-        /** @var HttpResponse $responseHeaders */
-
-        $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED, array(
-            'response'    => $responseHeaders,
-            'transporter' => $this,
-
-            'body'        => $body,
-
-            'request'     => $this->getLastRequest(),
-            'continue'    => false, ## no more request by default
+        $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_RECEIVED, array(
+            'parsed_response' => $parsedResponse,
+            'response'        => $response,
+            'request'         => $this->getLastRequest(),
+            'transporter'     => $this,
         ));
 
-        $bodyStream = $emitter->collector()->getBody();
-        $responseHeaders->setBody($bodyStream);
-
-        return $responseHeaders;
+        if ($r = $emitter->collector()->getResponse())
+            $response = $r;
+        
+        return parent::finalizeResponseFromStream($response, $parsedResponse);
     }
 
     /**
@@ -176,9 +175,9 @@ class TransporterHttpSocket
     {
         return $this->isRequestComplete;
     }
-
-
-    // ...
+    
+    
+    // Implement EventProvider:
 
     /**
      * Get Events
@@ -194,6 +193,7 @@ class TransporterHttpSocket
     }
 
     
+    // Implement Options Provider:
     
     /**
      * @override just for ide completion
@@ -210,37 +210,17 @@ class TransporterHttpSocket
      */
     static function newOptsData($builder = null)
     {
-        # provide "server_address" connection options from "base_url" browser option:
-        // made absolute server url from given baseUrl, but keep original untouched
-        // http://raya-media/path/to/uri --> http://raya-media/
-        $baseUrl = $this->optsData()->getBaseUrl();
-        if (false !== $baseUrl = parse_url($baseUrl))
-        {
-            if ( isset($baseUrl['scheme']) && isset($baseUrl['host']) ) {
-                // Connect To HOST
-                $serverHost = '';
-                (!isset($baseUrl['scheme'])) ?: $serverHost .= $baseUrl['scheme'].'://';
-                $serverHost .= $baseUrl['host'];
-                (!isset($baseUrl['port']))   ?: $serverHost .= ':'.$baseUrl['port'];
-
-                if ($serverHost !== $transporter->optsData()->getServerAddress()) {
-                    $transporter->optsData()->setServerAddress($serverHost);
-                    $reConnect = true;
-                }
-            }
-        }
-        
         return new TransporterHttpOptions($builder);
     }
 
 
     // ... TODO some move outside
 
-    protected function __attachDefaultListeners()
+    protected function _attachDefaultListeners()
     {
         $this->event()->on(
             TransporterHttpEvents::EVENT_REQUEST_PREPARE_EXPRESSION
-            , new onRequestPrepareSend
+            , new onRequestPrepareExpression
             , 100
         );
 
@@ -253,16 +233,14 @@ class TransporterHttpSocket
         );
 
         $this->event()->on(
-            TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED
-            , new onResponseBodyReceived
+            TransporterHttpEvents::EVENT_RESPONSE_RECEIVED
+            , new onResponseReceived
             , 100
         );
 
-        $this->event()->on([
-                TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED,
-                TransporterHttpEvents::EVENT_RESPONSE_BODY_RECEIVED,
-            ]
-            , new onEventsCloseConnection
+        $this->event()->on(
+            TransporterHttpEvents::EVENT_RESPONSE_RECEIVED
+            , new onResponseReceivedCloseConnection
             , -1000
         );
     }

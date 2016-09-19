@@ -1,7 +1,7 @@
 <?php
 namespace Poirot\HttpAgent\Interfaces;
 
-use Poirot\Http\Interfaces\iHttpRequest;
+use Psr\Http\Message\RequestInterface;
 
 
 /**
@@ -15,9 +15,9 @@ interface iPluginBrowserExpression
     /**
      * Manipulate Http Request
      *
-     * @param iHttpRequest $request
+     * @param RequestInterface $request
      *
-     * @return iHttpRequest Copy Clone
+     * @return RequestInterface|null Copy/Clone
      */
-    function withHttpRequest(iHttpRequest $request);
+    function withHttpRequest(RequestInterface $request);
 }

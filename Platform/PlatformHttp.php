@@ -11,16 +11,25 @@ use Poirot\Connection\Interfaces\iConnection;
 use Poirot\Http\Header\FactoryHttpHeader;
 use Poirot\Http\HttpRequest;
 
-use Poirot\HttpAgent\Browser;
-use Poirot\HttpAgent\Browser\DataOptionsPlatform;
+use Poirot\Http\HttpResponse;
+use Poirot\Http\Interfaces\iHeaders;
+use Poirot\Http\Interfaces\iHttpRequest;
+use Poirot\Http\Interfaces\iHttpResponse;
+use Poirot\Http\Psr\RequestBridgeInPsr;
+use Poirot\Http\Psr\ResponseBridgeInPsr;
+use Poirot\HttpAgent\Browser\Plugin\BaseBrowserPlugin;
 use Poirot\HttpAgent\Interfaces\iPluginBrowserExpression;
 use Poirot\HttpAgent\Interfaces\iPluginBrowserResponse;
 use Poirot\HttpAgent\Interfaces\iTransporterHttp;
 use Poirot\HttpAgent\CommandRequestHttp;
 use Poirot\HttpAgent\Transporter\TransporterHttpSocket;
 
+use Poirot\Ioc\Container\BuildContainer;
 use Poirot\Std\ConfigurableSetter;
-use Poirot\Std\Interfaces\Pact\ipConfigurable;
+use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
+use Poirot\Std\Struct\DataOptionsOpen;
+use Poirot\Stream\Interfaces\iStreamable;
+use Psr\Http\Message\RequestInterface;
 
 
 class PlatformHttp
@@ -32,12 +41,11 @@ class PlatformHttp
 
     /** @var TransporterHttpSocket|iConnection*/
     protected $transporter;
-
-    /** @var DataOptionsPlatform */
-    protected $options;
     /** @var PluginsOfBrowser */
     protected $plugins;
-    
+    /** @var DataOptionsOpen */
+    protected $pluginOptions;
+
     protected $_availablePlugins = array();
 
 
@@ -50,7 +58,9 @@ class PlatformHttp
     {
         $this->putBuildPriority(array(
             'transporter',
-            'transporter_settings',
+            'transporter_setting',
+            'plugin_manager',
+            'plugin_manager_setting',
         ));
         
         parent::__construct($options);
@@ -71,9 +81,10 @@ class PlatformHttp
         /** @var CommandRequestHttp $command */
 
         $platform = clone $this;
-        
+
         $settings = $command->getPlatformSettings();
         if ($settings)
+            // build platform with given command settings
             $platform->with($platform::parseWith($settings));
         
         $platform->command = $command;
@@ -94,162 +105,76 @@ class PlatformHttp
         if (!$command = $this->command)
             throw new \Exception('Command Not Provided Yet! try ::withCommand(iApiCommand) method.');
 
-        $transporter = $this->transporter();
-        $transporter = $this->_prepareTransporter($transporter);
-
-        
-
-        # Request Options:
-        ## (1)
-        /*
-         * $browser->POST('/api/v1/auth/login', [
-         *      'form_data' => [
-         *      // ...
-         */
-        if ($command->getPlatformSettings()) {
-            ## Browser specific options
-            $reConnect = false;
-            foreach($command->getPlatformSettings() as $prop => $value)
-            {
-                if ($this->optsData()->__get($prop) !== $value) {
-                    // Something changes in options; it may affect connection !!
-                    $this->optsData()->__set($prop, $value);
-                    $reConnect = true;
-                }
-            }
-
-            ## prepare connection again with new configs
-            if ($reConnect)
-                $this->_prepareTransporter($this->_connection);
-        }
-
-
-        // ...
-
-        if ($uri = $command->getTarget()) {
-            ## Reset Server Base Url When Absolute Http URI Requested
-            /*
-             * $browser->get(
-             *   'http://www.pasargad-co.ir/forms/contact'
-             *   , [ 'connection' => ['time_out' => 30],
-             *     // ...
-             */
-            $parsedUri = parse_url($uri);
-            if (isset($parsedUri['host'])) {
-                // Reconnect to host if changes
-                $this->optsData()->setBaseUrl($uri);
-                $this->_prepareTransporter($this->_connection);
-            }
-        }
+        $transporter = $this->_prepareTransporter($command);
 
         # Build Request Http Message:
-        ## (2)
-        $RequestHttp = $this->_newHttpRequest();
+        /** @var RequestInterface $request */
+        $request = $this->_makeExpressionRequest($command);
 
-        ## request method
-        $RequestHttp->setMethod($command->getMethod());
+        ## Finalize Request with Plugins:
 
-        ## request host
-        $serverUrl = $this->_connection->optsData()->getServerAddress();
-        if ($host = parse_url($serverUrl, PHP_URL_HOST)) {
-            if ($port = parse_url($serverUrl, PHP_URL_PORT))
-                $host = "$host:$port";
+        $AvailablePlugins = array();
 
-            $RequestHttp->setHost($host);
-        }
-
-        ## request headers
-
-        // default headers
-        $reqHeaders = $RequestHttp->headers();
-
-        $reqHeaders->insert(FactoryHttpHeader::of(array(
-            'User-Agent' => $this->optsData()->getUserAgent()
-        )));
-
-        $reqHeaders->insert(FactoryHttpHeader::of(array(
-            'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        )));
-
-        $reqHeaders->insert(FactoryHttpHeader::of(array(
-            'Cache-Control' => 'no-cache',
-        )));
-
-        // headers as default browser defined header
-        if ($headers = $this->optsData()->getRequestOptions()->getHeaders())
-            $RequestHttp->setHeaders($headers);
-
-        // headers as request method options
-        if ($headers = $command->getHeaders())
-            $RequestHttp->setHeaders($headers);
-
-
-        ## request uri
-
-        if (null === $baseUrl = $this->optsData()->getBaseUrl())
-            $baseUrl = '/';
-
-
-        $targetUri = $command->getTarget();
-        $targetUri = rtrim($baseUrl, '/').$targetUri;
-        $RequestHttp->setTarget($targetUri);
-
-        ## request body
-        $RequestHttp->setBody($command->getBody());
-
-
-        # Implement Browser Plugins:
-        ## (3)
-        foreach($command->getPlatformSettings() as $prop => $value)
+        foreach($this->getPluginOptions() as $prop => $value)
         {
-            if (!$this->getPlugins()->has($prop))
+            if (!$this->pluginManager()->has($prop))
                 /*
-                 * $browser->POST('/api/v1/auth/login', [
+                 * $browser->POST('/api/v1/auth/login', [ 'plugin' => [
                  *      'form_data' => [ // <=== plugin form_data will trigger with this params
                  *      // ...
                 */
                 continue; ## no plugin bind on this option
 
-            /** @var Browser\Plugin\BaseBrowserPlugin $plugin */
+            /** @var BaseBrowserPlugin $plugin */
             // Make Fresh With Options So Later Can Get; see makeResponse()
-            $plugin = $this->getPlugins()->fresh($prop, $value);
-            $this->_availablePlugins[] = $prop;
+            $plugin = $this->pluginManager()->fresh($prop, $value);
+            $AvailablePlugins[] = $prop;
 
-            if($plugin instanceof iPluginBrowserExpression)
-                $RequestHttp = $plugin->withHttpRequest($RequestHttp);
+            if($plugin instanceof iPluginBrowserExpression) {
+                /** @var iPluginBrowserExpression $plugin */
+                $r = $plugin->withHttpRequest($request);
+                if ($r && $r instanceof iHttpRequest) {
+                    $request = $r;
+                    continue;
+                }
+
+                throw new \Exception(sprintf(
+                    'Invalid Response Provided by (%s); give back: (%s).'
+                    , \Poirot\Std\flatten($plugin) , $r
+                ));
+            }
         }
 
-        return $RequestHttp;
+
+        # Send Request Over Wire
+        /** @var iStreamable $response */
+        $response = $transporter->send($request);
+
+        $response = new ResponseBridgeInPsr; // TODO
         
-        
-        
-        
-        
-        foreach ($this->_availablePlugins as $pluginName) {
-            $service = $this->getPlugins()->get($pluginName);
-            if ($service instanceof iPluginBrowserResponse)
-                $transporter = $service->withHttpResponse($transporter);
+        # Finalize Response with Plugins
+        foreach ($AvailablePlugins as $pluginName) {
+            $service = $this->pluginManager()->get($pluginName);
+            if ($service instanceof iPluginBrowserResponse) {
+                $r = $service->withHttpResponse($response);
+                if ($r && $r instanceof iHttpResponse) {
+                    $response = $r;
+                    continue;
+                }
+
+                throw new \Exception(sprintf(
+                    'Invalid Response Provided by (%s); give back: (%s).'
+                    , \Poirot\Std\flatten($service) , $r
+                ));
+            }
         }
 
-        $result = new ResponsePlatform($transporter);
+        $result = new ResponsePlatform($response);
         return $result;
     }
     
     
     // Options:
-
-    /**
-     * Get Connection Adapter
-     *
-     * @return TransporterHttpSocket
-     */
-    function transporter()
-    {
-        if (!$this->transporter)
-            $this->transporter = new TransporterHttpSocket;
-
-        return $this->transporter;
-    }
 
     /**
      * Set Transporter
@@ -272,19 +197,34 @@ class PlatformHttp
      * @return $this
      * @throws \Exception
      */
-    function setTransporterSettings($options)
+    function setTransporterSetting($options)
     {
+        // Settings directly take affect on transporter
+
         $transporter = $this->transporter();
-        if (!$transporter instanceof ipConfigurable)
+        if (!$transporter instanceof ipOptionsProvider)
             throw new \Exception(sprintf(
                 'Transporter (%s) is not configurable.'
+                , \Poirot\Std\flatten($transporter)
             ));
 
-        $transporter->close();
-        $transporter->with($transporter::parseWith($options));
+        $transporter->optsData($options);
         return $this;
     }
-    
+
+    /**
+     * Get Connection Adapter
+     *
+     * @return TransporterHttpSocket
+     */
+    function transporter()
+    {
+        if (!$this->transporter)
+            $this->transporter = new TransporterHttpSocket;
+
+        return $this->transporter;
+    }
+
     /**
      * Set Plugins Manager
      * 
@@ -292,21 +232,73 @@ class PlatformHttp
      * 
      * @return $this
      */
-    function setPlugins(PluginsOfBrowser $plugins)
+    function setPluginManager(PluginsOfBrowser $plugins)
     {
         $this->plugins = $plugins;
         return $this;
     }
-    
-    function getPlugins()
+
+    /**
+     * Set Plugins Builder Settings
+     *
+     * @param mixed $options
+     *
+     * @return $this
+     * @throws \Exception
+     */
+    function setPluginManagerSetting($options)
     {
-        if (!$this->plugins) {
-            $this->plugins = new PluginsOfBrowser($this->optsData()->getPluginsOptions());
-        }
+        // Settings directly take affect on plugin manager
+
+        $builder = new BuildContainer($options);
+        $builder->build(
+            $this->pluginManager()
+        );
+
+        return $this;
+    }
+    
+    function pluginManager()
+    {
+        if (!$this->plugins)
+            $this->plugins = new PluginsOfBrowser;
+
         
         return $this->plugins;
     }
-    
+
+    /**
+     * Set Plugin Options
+     *
+     * ['plugin' =>
+     *    'form_data' => [
+     *       'username' => 'Payam',
+     *       ...
+     *    ]
+     * ]
+     *
+     * @param array|\Traversable $options
+     *
+     * @return $this
+     */
+    function setPlugin($options)
+    {
+        $this->getPluginOptions()->import($options);
+        return $this;
+    }
+
+    /**
+     * Get Plugin Options
+     *
+     * @return DataOptionsOpen
+     */
+    function getPluginOptions()
+    {
+        if (!$this->pluginOptions)
+            $this->pluginOptions = new DataOptionsOpen;
+
+        return $this->pluginOptions;
+    }
     
     // ...
 
@@ -317,16 +309,27 @@ class PlatformHttp
      * - manipulate header or something in connection
      * - get connect to resource
      *
-     * @param TransporterHttpSocket|iConnection $transporter
+     * @param CommandRequestHttp $command
      *
+     * @return iTransporterHttp|TransporterHttpSocket
      * @throws \Exception
-     * @return TransporterHttpSocket|iTransporterHttp
      */
-    protected function _prepareTransporter(iConnection $transporter)
+    protected function _prepareTransporter(CommandRequestHttp $command)
     {
+        $transporter = $this->transporter();
+
         if (!$transporter instanceof TransporterHttpSocket)
-            throw new \Exception;
-        
+            throw new \Exception(sprintf(
+                'Transporter (%s) not supported.'
+                , \Poirot\Std\flatten($transporter)
+            ));
+
+        // check transporter server address been same as command host
+        if ($transporter->optsData()->getServerAddress() !== $command->getHost()) {
+            $transporter->optsData()->setServerAddress($command->getHost());
+            $transporter->close(); // reconnect
+        }
+
         try {
             if (!$transporter->isConnected())
                 $transporter->getConnect();
@@ -338,7 +341,66 @@ class PlatformHttp
         
         return $transporter;
     }
-    
+
+    /**
+     * Make Request Expression From Command
+     *
+     * @param CommandRequestHttp $command
+     *
+     * @return RequestInterface
+     * @throws \Exception
+     */
+    protected function _makeExpressionRequest(CommandRequestHttp $command)
+    {
+        $httpRequest = new HttpRequest;
+
+        ## request method
+        $httpRequest->setMethod($command->getMethod());
+
+        ## request host
+        $httpRequest->setHost($command->getHost());
+
+        ## request headers
+
+        // default headers
+        $headersObject = $httpRequest->headers();
+        $this->_exprAddDefaultHeadersTo($headersObject);
+
+        // headers as request method options
+        if ($headers = $command->getHeaders())
+            $httpRequest->setHeaders($headers);
+
+
+        ## request uri
+        $httpRequest->setTarget($command->getTarget());
+
+        ## request body
+        $httpRequest->setBody($command->getBody());
+
+        $request = new RequestBridgeInPsr($httpRequest);
+        return $request;
+    }
+
+    /**
+     * @param iHeaders $headersObject
+     */
+    private function _exprAddDefaultHeadersTo($headersObject)
+    {
+        $headersObject->insert(FactoryHttpHeader::of(array(
+            'User-Agent' => 'xxxxxxx',
+        )));
+
+        $headersObject->insert(FactoryHttpHeader::of(array(
+            'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        )));
+
+        $headersObject->insert(FactoryHttpHeader::of(array(
+            'Cache-Control' => 'no-cache',
+        )));
+    }
+
+    // ..
+
     function __clone()
     {
         $_f__clone_array = function($arr) use (&$_f__clone_array) {

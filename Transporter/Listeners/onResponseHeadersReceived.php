@@ -1,11 +1,9 @@
 <?php
 namespace Poirot\HttpAgent\Transporter\Listeners;
 
-use Poirot\Events\Listener\aListener;
+use Psr\Http\Message\RequestInterface;
 
-use Poirot\Http\HttpRequest;
-use Poirot\Http\HttpResponse;
-use Poirot\Http\Interfaces\iHttpRequest;
+use Poirot\Events\Listener\aListener;
 
 use Poirot\Stream\Streamable;
 
@@ -15,24 +13,27 @@ use Poirot\HttpAgent\Transporter\TransporterHttpSocket;
 class onResponseHeadersReceived extends aListener
 {
     /**
+     * @param RequestInterface      $request
+     * @param array                 $headers
      * @param TransporterHttpSocket $transporter
-     * @param HttpResponse          $response
-     * @param iHttpRequest          $request
      *
+     * $headers:
+     * array['version'=>string, 'status'=>int, 'reason'=>string, 'headers'=>array(key=>val)]
+     * 
      * @return mixed
      */
-    function __invoke($transporter = null, $response = null, $request = null)
+    function __invoke($request = null, &$headers = null, $transporter = null)
     {
-        $statusCode = $response->getStatusCode();
-
+        $statusCode = $headers['status'];
+        
         # Handle 100 and 101 responses
         if ($statusCode == 100 || $statusCode == 101)
             ## receive data will continue after events
             // TODO
-            $transporter->getConnect();
+            VOID;
 
         # HEAD requests and 204 or 304 stat codes are not expected to have a body
-        if ($statusCode == 304 || $statusCode == 204 || $request->getMethod() == HttpRequest::METHOD_HEAD)
+        if ($statusCode == 304 || $statusCode == 204 || $request->getMethod() == 'HEAD')
             ## do not continue with body
             return array('continue' => false);
     }

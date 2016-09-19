@@ -1,19 +1,13 @@
 <?php
 namespace Poirot\HttpAgent;
 
+use Poirot\HttpAgent\Platform\PlatformHttp;
 use Traversable;
 
 use Psr\Http\Message\StreamInterface;
 
 use Poirot\ApiClient\Request\Command;
 
-use Poirot\Http\Header\CollectionHeader;
-use Poirot\Http\Interfaces\iHeaders;
-
-use Poirot\Stream\Interfaces\iStreamable;
-
-use Poirot\HttpAgent\Browser\DataOptionsPlatform;
-use Poirot\Stream\Psr\StreamBridgeFromPsr;
 use Poirot\Stream\Streamable;
 
 
@@ -44,7 +38,7 @@ class CommandRequestHttp
     /** @var StreamInterface|string|null */
     protected $body;
 
-    /** @var DataOptionsPlatform Browser Specific Options */
+    /** @var array|\Traversable Browser Specific Options */
     protected $platformSettings;
 
 
@@ -126,6 +120,10 @@ class CommandRequestHttp
     // options:
 
     /**
+     * @see PlatformHttp::_makeExpressionRequest
+     */
+    
+    /**
      * Set Request Method Type
      * exp. GET, POST, ...
      *
@@ -201,6 +199,7 @@ class CommandRequestHttp
     }
 
     /**
+     * @see aHttpMessage::setHeaders used on platform
      * @return array|null
      */
     function getHeaders()
@@ -229,14 +228,17 @@ class CommandRequestHttp
     }
 
     
-    /** @see Browser::setPlatformSettings */
+    /** 
+     * @see Browser::setPlatformSettings
+     * @see PlatformHttp // Options:
+     */ 
     
     /**
      * Set Platform Specific Options
      *
      * note: also registered platform plugins options include here
      *
-     * @param array|\Traversable|DataOptionsPlatform $platformSettings
+     * @param array|\Traversable $platformSettings
      * @return $this
      */
     function setPlatformSettings($platformSettings)
@@ -250,7 +252,7 @@ class CommandRequestHttp
      *
      * note: also registered platform plugins options include here
      *
-     * @return DataOptionsPlatform
+     * @return array|\Traversable
      */
     function getPlatformSettings()
     {

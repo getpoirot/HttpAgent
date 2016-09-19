@@ -3,10 +3,10 @@ namespace Poirot\HttpAgent\Browser\Plugin;
 
 use Poirot\Std\Struct\DataOptionsOpen;
 
-use Poirot\HttpAgent\Interfaces\iBrowserPlugin;
+use Poirot\HttpAgent\Interfaces\iPluginBrowser;
 
 
 class BaseBrowserPlugin 
     extends DataOptionsOpen
-    implements iBrowserPlugin
+    implements iPluginBrowser
 { }

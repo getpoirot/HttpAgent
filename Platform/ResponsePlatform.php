@@ -6,8 +6,8 @@ use Poirot\ApiClient\ResponseOfClient;
 use Poirot\Http\HttpMessage\Response\Plugin\Status;
 use Poirot\Http\HttpResponse;
 use Poirot\Http\Interfaces\iHeader;
-
 use Poirot\Http\Interfaces\iHttpResponse;
+
 use Poirot\Stream\Interfaces\iStreamable;
 
 

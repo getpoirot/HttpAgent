@@ -4,15 +4,13 @@ namespace Poirot\HttpAgent\Transporter;
 
 use Poirot\Connection\Http\OptionsHttpSocket;
 
-class HttpTransporterOptions 
+class TransporterHttpOptions 
     extends OptionsHttpSocket
 {
     /** @var bool Http Transporter Allowed To Decode Body Response */
     protected $allowedDecoding = true;
 
     
-    // ... TODO move outside
-
     /**
      * note: some times we need raw body from response
      *       without any modification or filters added

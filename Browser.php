@@ -1,7 +1,6 @@
 <?php
 namespace Poirot\HttpAgent;
 
-use Poirot\Std\Interfaces\Pact\ipConfigurable;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamInterface;
 
@@ -13,6 +12,8 @@ use Poirot\Http\Interfaces\iHeaders;
 
 use Poirot\PathUri\UriHttp;
 use Poirot\PathUri\UriSequence;
+
+use Poirot\Std\Interfaces\Pact\ipConfigurable;
 
 use Poirot\HttpAgent\Browser\DataOptionsPlatform;
 use Poirot\HttpAgent\Platform\PlatformHttp;
@@ -38,10 +39,10 @@ class Browser extends aClient
     /**
      * Construct
      *
-     * - construct('http://google.com', ['transporter_options' => ['time_out' => 20]]);
+     * - construct('http://google.com', ['platform_settings' => ['connection_settings' => 'time_out' => 20]]);
      * - construct([
-     *    'base_url'            => 'http://google.com'
-     *    'transporter_options' => ['time_out' => 20]
+     *    'base_url'          => 'http://google.com'
+     *    'platform_settings' => ['connection_settings' => 'time_out' => 20]
      * ]);
      *
      * @param DataOptionsPlatform|\Traversable|null|string $baseUrlOrOptions
@@ -310,6 +311,7 @@ class Browser extends aClient
 
         // TODO what if authority user-info exists how to connect to server with authority?
         $command->setHost($reqUrl->getHost());
+        // command target contains only path/to/resource
         $reqUrl->setScheme(null)->setHost(null)->setUserInfo(null)->setPort(null);
         $target = $reqUrl->toString();
         $command->setTarget($target);
