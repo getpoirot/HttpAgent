@@ -12,7 +12,7 @@ use Poirot\Http\Interfaces\iHeaders;
 
 use Poirot\Stream\Interfaces\iStreamable;
 
-use Poirot\HttpAgent\Browser\DataOptionsBrowser;
+use Poirot\HttpAgent\Browser\DataOptionsPlatform;
 use Poirot\Stream\Psr\StreamBridgeFromPsr;
 use Poirot\Stream\Streamable;
 
@@ -44,8 +44,8 @@ class CommandRequestHttp
     /** @var StreamInterface|string|null */
     protected $body;
 
-    /** @var DataOptionsBrowser Browser Specific Options */
-    protected $browserOptions;
+    /** @var DataOptionsPlatform Browser Specific Options */
+    protected $platformSettings;
 
 
     /**
@@ -106,7 +106,7 @@ class CommandRequestHttp
             'uri'     => $this->getTarget(),
             'headers' => $this->getHeaders(),
             'body'    => $this->getBody(),
-            'browser_options' => $this->getBrowserOptions(),
+            'browser_options' => $this->getPlatformSettings(),
         );
         
         return $args;
@@ -228,32 +228,32 @@ class CommandRequestHttp
         return $this->body;
     }
 
+    
+    /** @see Browser::setPlatformSettings */
+    
     /**
-     * Set Browser Specific Options
+     * Set Platform Specific Options
      *
      * note: also registered platform plugins options include here
      *
-     * @param array|\Traversable|DataOptionsBrowser $browserOptions
+     * @param array|\Traversable|DataOptionsPlatform $platformSettings
      * @return $this
      */
-    function setBrowserOptions($browserOptions)
+    function setPlatformSettings($platformSettings)
     {
-        $this->getBrowserOptions()->import($browserOptions);
+        $this->platformSettings = $platformSettings;
         return $this;
     }
 
     /**
-     * Get Browser Specific Options
+     * Get Platform Specific Options
      *
      * note: also registered platform plugins options include here
      *
-     * @return DataOptionsBrowser
+     * @return DataOptionsPlatform
      */
-    function getBrowserOptions()
+    function getPlatformSettings()
     {
-        if (!$this->browserOptions)
-            $this->browserOptions = new DataOptionsBrowser;
-
-        return $this->browserOptions;
+        return $this->platformSettings;
     }
 }

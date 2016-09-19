@@ -1,80 +1,29 @@
 <?php
 namespace Poirot\HttpAgent;
 
+use Poirot\Std\Interfaces\Pact\ipConfigurable;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
+
 use Poirot\ApiClient\aClient;
 use Poirot\ApiClient\Interfaces\Request\iApiCommand;
-
-use Poirot\Connection\Interfaces\iConnection;
 
 use Poirot\Http\HttpRequest;
 use Poirot\Http\Interfaces\iHeaders;
 
-use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
+use Poirot\PathUri\UriHttp;
+use Poirot\PathUri\UriSequence;
 
-use Poirot\Stream\Interfaces\iStreamable;
-
-use Poirot\HttpAgent\Browser\DataOptionsBrowser;
-use Poirot\HttpAgent\Transporter\TransporterHttpSocket;
+use Poirot\HttpAgent\Browser\DataOptionsPlatform;
 use Poirot\HttpAgent\Platform\PlatformHttp;
 use Poirot\HttpAgent\Platform\ResponsePlatform;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\StreamInterface;
 
-/*
-$browser = new Browser('http://google.com/about', [
-    'connection' => [
-        'time_out' => 30,
-        'persist'  => false,
-    ],
-]);
-
-$method = new ReqMethod([
-    'uri' => '/',
-    'method'  => HttpRequest::METHOD_GET,
-    'browser' => [
-        'base_url'   => 'http://raya-media.com/page',
-        'user_agent' => 'Payam Browser',
-        'connection' => [
-            'time_out' => 10,
-            'persist'  => true,
-            'allow_decoding' => false,
-        ],
-    ]
-]);
-
-$response = $browser->call($method);
-
-// ================================================================
-
-$browser->custom(
-    'http://www.pasargad-co.ir/forms/contact'
-    , [
-        'connection' => ['time_out' => 30],
-        'request'    => [
-            'headers' => [
-                'X-data' => 'extra header data'
-            ]
-            'uri_options' => [
-                'query'     => 'first=value&arr[]=foo+bar&arr[]=baz',
-                'fragment'  => 'fragment',
-            ]
-        ],
-    ]
-    , 'Salam Pasargad e Khar'
-    , ['this' => 'header']
-)->getResult(function($response) {
-    $response->flush(false);
-});
-
-*/
 
 /**
  * TODO decompress gzip response with chunked data not working
  */
 class Browser extends aClient
 {
-    /** @var TransporterHttpSocket|iConnection*/
-    protected $transporter;
     /** @var PlatformHttp */
     protected $platform;
 
@@ -89,13 +38,13 @@ class Browser extends aClient
     /**
      * Construct
      *
-     * - construct('http://google.com', ['connection_options' => ['time_out' => 20]]);
+     * - construct('http://google.com', ['transporter_options' => ['time_out' => 20]]);
      * - construct([
      *    'base_url'            => 'http://google.com'
-     *    'connection_options'  => ['time_out' => 20]
+     *    'transporter_options' => ['time_out' => 20]
      * ]);
      *
-     * @param DataOptionsBrowser|\Traversable|null|string $baseUrlOrOptions
+     * @param DataOptionsPlatform|\Traversable|null|string $baseUrlOrOptions
      * @param array|null                                  $ops               Options when using as base_url
      */
     function __construct($baseUrlOrOptions = null, $ops = null)
@@ -122,24 +71,9 @@ class Browser extends aClient
             // Bind same object options into Platform to sync. changes!!
             $this->platform = new PlatformHttp;
 
-        $this->platform->optsData()->clean()->import($this->optsData());
         return $this->platform;
     }
-
-    /**
-     * Get Connection Adapter
-     *
-     * @return TransporterHttpSocket
-     */
-    function transporter()
-    {
-        if (!$this->transporter)
-            $this->transporter = new TransporterHttpSocket;
-
-        $this->transporter->optsData()->clean()->import($this->optsData()->getConnectionOptions());
-        return $this->transporter;
-    }
-
+    
     /**
      * @override Ide Completion
      * @param iApiCommand $command
@@ -161,7 +95,11 @@ class Browser extends aClient
      */
     function request(RequestInterface $request, $options = null)
     {
-        $uri     = $request->getRequestTarget();
+        $uri = $request->getUri();
+        if (!$uri)
+            // use alternative
+            $uri = $request->getRequestTarget();
+
         $headers = array();
         foreach ($request->getHeaders() as $name => $_)
             $headers[$name] = $request->getHeaderLine($name);
@@ -306,61 +244,28 @@ class Browser extends aClient
     {
         return $this->baseUrl;
     }
-
+    
 
     /**
-     * @param mixed $userAgent
+     * Set Platform Settings
+     * 
+     * @param mixed $options
+     * 
      * @return $this
+     * @throws \Exception
      */
-    function setUserAgent($userAgent)
+    function setPlatformSettings($options)
     {
-        $this->userAgent = (string) $userAgent;
+        $platform = $this->platform();
+        if (!$platform instanceof ipConfigurable)
+            throw new \Exception(sprintf(
+                'Platform (%s) is not configurable.'
+            ));
+
+        $platform->with($platform::parseWith($options));
         return $this;
     }
-
-    /**
-     * @return mixed
-     */
-    function getUserAgent()
-    {
-        if (!$this->userAgent || $this->userAgent === VOID) {
-            $userAgent = '';
-
-            if (!$userAgent) {
-                $userAgent = 'PoirotBrowser';
-                $userAgent .= '-PHP/' . PHP_VERSION;
-            }
-
-            $this->setUserAgent($userAgent);
-        }
-
-        return $this->userAgent;
-    }
-
-    /**
-     * Set Plugins Services Settings
-     * @see BuildContainer
-     *
-     * @param array $pluginOptions
-     *
-     * @return $this
-     */
-    function setPluginOptions(array $pluginOptions)
-    {
-        $this->pluginOptions = $pluginOptions;
-        return $this;
-    }
-
-    /**
-     * Get Plugins Setting
-     * @return array
-     */
-    function getPluginOptions()
-    {
-        return $this->pluginOptions;
-    }
-
-
+    
     // ...
     
     /**
@@ -380,14 +285,40 @@ class Browser extends aClient
 
         $command->setMethod($method);
 
-        $command->setHost($host);
-        $command->setTarget($uri);
+        # attain host / target uri ...
+        $host = null;
+        
+        $reqUrl = new UriHttp(UriHttp::parseWith((string) $uri));
+        if (!$reqUrl->isAbsolute()) {
+            if ($baseUrl = $this->getBaseUrl())
+            {
+                ## Replacement of BaseUrl to requested Uri ..
+                // query, fragment params must not included
+
+                ### Host
+                $baseUrl = new UriHttp(UriHttp::parseWith($baseUrl));
+                $reqUrl->setScheme($baseUrl->getScheme());
+                // request authority
+                $reqUrl->setHost($baseUrl->getHost());
+                $reqUrl->setUserInfo($baseUrl->getUserInfo());
+                $reqUrl->setPort($baseUrl->getPort());
+
+                ## Path
+                $reqUrl->prepend(new UriSequence($baseUrl->getPath()));
+            }
+        }
+
+        // TODO what if authority user-info exists how to connect to server with authority?
+        $command->setHost($reqUrl->getHost());
+        $reqUrl->setScheme(null)->setHost(null)->setUserInfo(null)->setPort(null);
+        $target = $reqUrl->toString();
+        $command->setTarget($target);
 
         $command->setHeaders($headers);
         $command->setBody($body);
 
         // let extra options received by Platform
-        $command->setBrowserOptions($options);
+        $command->setPlatformSettings($options);
         
         return $command;
     }

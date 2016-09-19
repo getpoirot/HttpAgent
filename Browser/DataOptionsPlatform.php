@@ -11,14 +11,9 @@ use Poirot\HttpAgent\Transporter\HttpTransporterOptions;
  * and used on platform
  * 
  */
-class DataOptionsBrowser 
+class DataOptionsPlatform 
     extends DataOptionsOpen
 {
-    
-
-
-    
-
     // ...
 
     /**

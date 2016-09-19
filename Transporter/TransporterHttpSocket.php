@@ -7,10 +7,10 @@ use Poirot\Http\HttpResponse;
 
 use Poirot\Http\Interfaces\iHttpRequest;
 use Poirot\Http\Psr\RequestBridgeInPsr;
+use Poirot\HttpAgent\Interfaces\iTransporterHttp;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
 
-use Poirot\HttpAgent\Interfaces\iTransporterHttp;
 use Poirot\HttpAgent\Transporter\Listeners\onEventsCloseConnection;
 use Poirot\HttpAgent\Transporter\Listeners\onRequestPrepareSend;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseBodyReceived;
@@ -210,6 +210,26 @@ class TransporterHttpSocket
      */
     static function newOptsData($builder = null)
     {
+        # provide "server_address" connection options from "base_url" browser option:
+        // made absolute server url from given baseUrl, but keep original untouched
+        // http://raya-media/path/to/uri --> http://raya-media/
+        $baseUrl = $this->optsData()->getBaseUrl();
+        if (false !== $baseUrl = parse_url($baseUrl))
+        {
+            if ( isset($baseUrl['scheme']) && isset($baseUrl['host']) ) {
+                // Connect To HOST
+                $serverHost = '';
+                (!isset($baseUrl['scheme'])) ?: $serverHost .= $baseUrl['scheme'].'://';
+                $serverHost .= $baseUrl['host'];
+                (!isset($baseUrl['port']))   ?: $serverHost .= ':'.$baseUrl['port'];
+
+                if ($serverHost !== $transporter->optsData()->getServerAddress()) {
+                    $transporter->optsData()->setServerAddress($serverHost);
+                    $reConnect = true;
+                }
+            }
+        }
+        
         return new TransporterHttpOptions($builder);
     }
 
