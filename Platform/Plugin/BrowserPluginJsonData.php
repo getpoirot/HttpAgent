@@ -1,61 +1,32 @@
 <?php
 namespace Poirot\HttpAgent\Browser\Plugin;
 
-use Poirot\Http\Header\FactoryHttpHeader;
-use Poirot\Http\Interfaces\iHttpRequest;
+use Psr\Http\Message\RequestInterface;
 
-use Poirot\HttpAgent\Interfaces\iBrowserExpressionPlugin;
-
-
-/*
-$data = $browser->POST('/api/v1/auth/login'
-    , [ 'json' // <=== send application/json to server
-    => [
-            'email'    => 'naderi.payam@gmail.com',
-            'password' => '123456'
-        ]
-    ]
-)->getResult(new Browser\Plugin\BJsonPlugin());
-
-// ===================================================
-
-$data = $browser->POST('/api/v1/auth/login'
-    , [ 'form_data'
-        => [
-            'email'    => 'naderi.payam@gmail.com',
-            'password' => '123456'
-        ]
-    ]
-)->getResult()->plg()->json();
+use Poirot\HttpAgent\Interfaces\iPluginBrowserExpression;
 
 
-echo $data->token;
-
-*/
-
-class BrowserPluginJsonData extends BaseBrowserPlugin
-    implements iBrowserExpressionPlugin
+class BrowserPluginJsonData
+    extends BaseBrowserPlugin
+    implements iPluginBrowserExpression
 {
-    protected $_t_options__internal = array(
-        'setMessageObject', // this method will ignore as option in prop
-        'getMessageObject',
-    );
-
-    
     /**
      * Manipulate Http Request
      *
-     * @param iHttpRequest $request
+     * @param RequestInterface $request
+     * 
+     * @return null|RequestInterface
      */
-    function withHttpRequest(iHttpRequest $request)
+    function withHttpRequest(RequestInterface $request)
     {
-        $params = \Poirot\Std\cast($this)->toArray();
+        $params  = \Poirot\Std\cast($this)->toArray();
 
-        $body   = json_encode($params);
-        $request->setBody($body);
+        $body    = json_encode($params);
+        $request = $request
+            ->withBody($body)
+            ->withHeader('Content-Type', 'application/json')
+        ;
 
-        $request->headers()->insert(
-            FactoryHttpHeader::of( array('Content-Type' => 'application/json') )
-        );
+        return $request;
     }
 }

@@ -1,10 +1,8 @@
 <?php
 namespace Poirot\HttpAgent\Browser\Plugin;
 
-use Poirot\Http\Header\FactoryHttpHeader;
-use Poirot\Http\Interfaces\iHttpRequest;
-
 use Poirot\HttpAgent\Interfaces\iPluginBrowserExpression;
+use Psr\Http\Message\RequestInterface;
 
 
 class BrowserPluginFormData 
@@ -15,23 +13,20 @@ class BrowserPluginFormData
     /**
      * Manipulate Http Request
      *
-     * @param iHttpRequest $request
+     * @param RequestInterface $request
      *
-     * @return iHttpRequest
+     * @return RequestInterface
      */
-    function withHttpRequest(iHttpRequest $request)
+    function withHttpRequest(RequestInterface $request)
     {
-        $request = clone $request;
         $params  = \Poirot\Std\cast($this)->toArray();
         $body    = http_build_query($params, null, '&');
 
-        $request->setBody($body);
-        $request->headers()
-            ->del('Content-Type')
-            ->insert(FactoryHttpHeader::of(
-                array('Content-Type' => 'application/x-www-form-urlencoded')
-            ));
-
+        $request = $request
+            ->withBody($body)
+            ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+        ;
+        
         return $request;
     }
 }

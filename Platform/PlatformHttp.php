@@ -11,7 +11,6 @@ use Poirot\Connection\Interfaces\iConnection;
 use Poirot\Http\Header\FactoryHttpHeader;
 use Poirot\Http\HttpRequest;
 
-use Poirot\Http\HttpResponse;
 use Poirot\Http\Interfaces\iHeaders;
 use Poirot\Http\Interfaces\iHttpRequest;
 use Poirot\Http\Interfaces\iHttpResponse;
@@ -30,6 +29,7 @@ use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
 use Poirot\Std\Struct\DataOptionsOpen;
 use Poirot\Stream\Interfaces\iStreamable;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 
 class PlatformHttp
@@ -150,14 +150,14 @@ class PlatformHttp
         /** @var iStreamable $response */
         $response = $transporter->send($request);
 
-        $response = new ResponseBridgeInPsr; // TODO
+        kd($response->read());
         
         # Finalize Response with Plugins
         foreach ($AvailablePlugins as $pluginName) {
             $service = $this->pluginManager()->get($pluginName);
             if ($service instanceof iPluginBrowserResponse) {
                 $r = $service->withHttpResponse($response);
-                if ($r && $r instanceof iHttpResponse) {
+                if ($r && $r instanceof ResponseInterface) {
                     $response = $r;
                     continue;
                 }

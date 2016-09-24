@@ -5,9 +5,6 @@ use Poirot\Connection\Http\StreamFilter\DechunkFilter;
 
 use Poirot\Events\Listener\aListener;
 
-use Poirot\Http\HttpResponse;
-use Poirot\Http\Interfaces\iHttpRequest;
-
 use Poirot\Stream\Filter\FilterStreamPhpBuiltin;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
@@ -53,12 +50,12 @@ class onResponseReceived
     }
 
     /**
-     * @param iStreamable $response
      * @param string      $encoding
+     * @param iStreamable $response
      *
      * @return iStreamable
      */
-    private function _handleContentEncoding($response, $encoding)
+    private function _handleContentEncoding($encoding, $response)
     {
         if (strstr(strtolower($encoding), 'gzip') === false)
             // Nothing To Do!
@@ -66,31 +63,25 @@ class onResponseReceived
 
         ## Uses PHP's zlib.inflate filter to inflate deflate or gzipped content
 
-        // TODO
-
-        $body->resource()->appendFilter(new FilterStreamPhpBuiltin('zlib.inflate'), STREAM_FILTER_READ);
+        $response->resource()->appendFilter(new FilterStreamPhpBuiltin('zlib.inflate'), STREAM_FILTER_READ);
         ### skip the first 10 bytes for zlib
-        $body = new Streamable\SLimitSegment($body, -1, 10);
-
-        return $response;
+        $response = new Streamable\SLimitSegment($response, -1, 10);
+        return array('response' => $response);
     }
 
     /**
-     * @param iStreamable $response
      * @param string      $encoding
+     * @param iStreamable $response
      *
      * @return iStreamable
      */
-    private function _handleTransferEncoding($response, $encoding)
+    private function _handleTransferEncoding($encoding, $response)
     {
         if (strstr(strtolower($encoding), 'chunked') === false)
             // Nothing To Do!
             return $response;
 
-        // TODO
-
-        $body->getResource()->appendFilter(new DechunkFilter, STREAM_FILTER_READ);
-
-        return $response;
+        $response->resource()->appendFilter(new DechunkFilter, STREAM_FILTER_READ);
+        return array('response' => $response);
     }
 }

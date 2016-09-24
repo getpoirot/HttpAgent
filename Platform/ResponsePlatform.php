@@ -3,12 +3,11 @@ namespace Poirot\HttpAgent\Platform;
 
 use Poirot\ApiClient\ResponseOfClient;
 
-use Poirot\Http\HttpMessage\Response\Plugin\Status;
 use Poirot\Http\HttpResponse;
 use Poirot\Http\Interfaces\iHeader;
-use Poirot\Http\Interfaces\iHttpResponse;
 
 use Poirot\Stream\Interfaces\iStreamable;
+use Psr\Http\Message\ResponseInterface;
 
 
 class ResponsePlatform 
@@ -17,21 +16,21 @@ class ResponsePlatform
     /**
      * Construct
      *
-     * @param iHttpResponse $response
+     * @param ResponseInterface $response
      */
-    function __construct(iHttpResponse $response)
+    function __construct(ResponseInterface $response)
     {
         $this->rawbody = $response;
 
         $this->setRawBody($response->getBody());
 
         /** @var iHeader $h */
-        foreach($response->headers() as $h)
-            $this->meta()->__set($h->getLabel(), $h);
+        foreach($response->getHeaders() as $h => $_)
+            $this->meta()->__set($h, $response->getHeaderLine($h));
 
-        $statusPlugin = Status::_($response);
-        if (!$statusPlugin->isSuccess())
-            $this->setException(new \RuntimeException($response->getStatusReason(), $response->getStatusCode()));
+        $code = $response->getStatusCode();
+        if (!(200 <= $code && $code < 300))
+            $this->setException(new \RuntimeException($response->getReasonPhrase(), $response->getStatusCode()));
         
         parent::__construct();
     }
@@ -48,7 +47,7 @@ class ResponsePlatform
      */
     function setRawBody($content)
     {
-        $this->rawbody->setBody($content);
+        $this->rawbody = $content;
         return $this;
     }
 
@@ -59,7 +58,7 @@ class ResponsePlatform
      */
     function getRawBody()
     {
-        return $this->rawbody->getBody();
+        return $this->rawbody;
     }
 
 
