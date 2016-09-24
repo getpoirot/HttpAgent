@@ -7,15 +7,8 @@ use Psr\Http\Message\StreamInterface;
 use Poirot\ApiClient\aClient;
 use Poirot\ApiClient\Interfaces\Request\iApiCommand;
 
-use Poirot\Http\HttpRequest;
-use Poirot\Http\Interfaces\iHeaders;
-
-use Poirot\PathUri\UriHttp;
-use Poirot\PathUri\UriSequence;
-
 use Poirot\Std\Interfaces\Pact\ipConfigurable;
 
-use Poirot\HttpAgent\Browser\DataOptionsPlatform;
 use Poirot\HttpAgent\Platform\PlatformHttp;
 use Poirot\HttpAgent\Platform\ResponsePlatform;
 
@@ -45,7 +38,7 @@ class Browser extends aClient
      *    'platform_settings' => ['connection_settings' => 'time_out' => 20]
      * ]);
      *
-     * @param DataOptionsPlatform|\Traversable|null|string $baseUrlOrOptions
+     * @param \Traversable|null|string $baseUrlOrOptions
      * @param array|null                                  $ops               Options when using as base_url
      */
     function __construct($baseUrlOrOptions = null, $ops = null)
@@ -117,7 +110,7 @@ class Browser extends aClient
      */
     function GET($uri, $options = null, $headers = null)
     {
-        $command = $this->_makeRequestCommand(HttpRequest::METHOD_GET, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand('GET', $uri, $options, null, $headers);
         return $this->call($command);
     }
 
@@ -129,7 +122,7 @@ class Browser extends aClient
      */
     function HEAD($uri, $options = null, $headers = null)
     {
-        $command = $this->_makeRequestCommand(HttpRequest::METHOD_HEAD, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand('HEAD', $uri, $options, null, $headers);
         return $this->call($command);
     }
 
@@ -142,7 +135,7 @@ class Browser extends aClient
      */
     function POST($uri, $options = null, $body = null, $headers = null)
     {
-        $command = $this->_makeRequestCommand(HttpRequest::METHOD_POST, $uri, $options, $body, $headers);
+        $command = $this->_makeRequestCommand('POST', $uri, $options, $body, $headers);
         return $this->call($command);
     }
 
@@ -155,7 +148,7 @@ class Browser extends aClient
      */
     function PUT($uri, $options = null, $body = null, $headers = null)
     {
-        $command = $this->_makeRequestCommand(HttpRequest::METHOD_PUT, $uri, $options, $body, $headers);
+        $command = $this->_makeRequestCommand('PUT', $uri, $options, $body, $headers);
         return $this->call($command);
     }
 
@@ -169,7 +162,7 @@ class Browser extends aClient
      */
     function PATCH($uri, $options = null, $body = null, $headers = null)
     {
-        $command = $this->_makeRequestCommand(HttpRequest::METHOD_PATCH, $uri, $options, $body, $headers);
+        $command = $this->_makeRequestCommand('PATCH', $uri, $options, $body, $headers);
         return $this->call($command);
     }
 
@@ -179,7 +172,7 @@ class Browser extends aClient
      */
     function DELETE($uri, $options = null, $headers = null)
     {
-        $command = $this->_makeRequestCommand(HttpRequest::METHOD_DELETE, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand('DELETE', $uri, $options, null, $headers);
         return $this->call($command);
     }
 
@@ -192,7 +185,7 @@ class Browser extends aClient
      */
     function OPTIONS($uri, $options = null, $headers = null)
     {
-        $command = $this->_makeRequestCommand(HttpRequest::METHOD_OPTIONS, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand('OPTIONS', $uri, $options, null, $headers);
         return $this->call($command);
     }
 
@@ -204,7 +197,7 @@ class Browser extends aClient
      */
     function CONNECT($uri, $options = null, $headers = null)
     {
-        $command = $this->_makeRequestCommand(HttpRequest::METHOD_CONNECT, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand('CONNECT', $uri, $options, null, $headers);
         return $this->call($command);
     }
 
@@ -216,7 +209,7 @@ class Browser extends aClient
      */
     function TRACE($uri, $options = null, $headers = null)
     {
-        $command = $this->_makeRequestCommand(HttpRequest::METHOD_TRACE, $uri, $options, null, $headers);
+        $command = $this->_makeRequestCommand('TRACE', $uri, $options, null, $headers);
         return $this->call($command);
     }
 
@@ -276,7 +269,7 @@ class Browser extends aClient
      * @param string                      $uri     Absolute Uri Or Relative To BaseUrl
      * @param array|\Traversable|null     $options Browser Options Or Open Options Used By Plugins
      * @param StreamInterface|string|null $body    Request Body
-     * @param array|iHeaders|null         $headers Specific Request Header/Replace Defaults
+     * @param array|null                  $headers Specific Request Header/Replace Defaults
      *
      * @return CommandRequestHttp
      */
