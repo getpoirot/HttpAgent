@@ -151,10 +151,12 @@ class PlatformHttp
         /** @var iStreamable $response */
         $response = $transporter->send($request);
 
+        // $response->read();
+        kd($response->rewind()->read(null, true));
 
         # Make Response
         // TODO here aggregate stream has an error while reading headers and ...
-        $rHeaders = \Poirot\Connection\Http\readAndSkipHeaders($response, true);
+        $rHeaders = \Poirot\Connection\Http\readAndSkipHeaders($response);
         $rHeaders = \Poirot\Connection\Http\parseResponseHeaders($rHeaders);
         $body     = new SLimitSegment($response); // limit body from current offset to end stream
 
