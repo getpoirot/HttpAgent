@@ -14,7 +14,7 @@ class onResponseHeadersReceived extends aListener
 {
     /**
      * @param RequestInterface      $request
-     * @param array                 $headers
+     * @param array                 $parsedHeaders
      * @param TransporterHttpSocket $transporter
      *
      * $headers:
@@ -22,9 +22,9 @@ class onResponseHeadersReceived extends aListener
      * 
      * @return mixed
      */
-    function __invoke($request = null, &$headers = null, $transporter = null)
+    function __invoke($request = null, $parsedHeaders = null, $transporter = null)
     {
-        $statusCode = $headers['status'];
+        $statusCode = $parsedHeaders['status'];
         
         # Handle 100 and 101 responses
         if ($statusCode == 100 || $statusCode == 101)

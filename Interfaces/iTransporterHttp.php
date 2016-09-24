@@ -10,7 +10,7 @@ use Poirot\Http\HttpResponse;
 use Poirot\Http\Interfaces\iHttpRequest;
 use Psr\Http\Message\RequestInterface;
 
-use Poirot\HttpAgent\Transporter\TransporterHttpEvents;
+use Poirot\HttpAgent\Transporter\EventHeapTransporterHttp;
 
 
 interface iTransporterHttp
@@ -75,7 +75,7 @@ interface iTransporterHttp
     /**
      * Get Events
      *
-     * @return TransporterHttpEvents
+     * @return EventHeapTransporterHttp
      */
     function event();
 }

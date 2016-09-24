@@ -1,6 +1,8 @@
 <?php
 namespace Poirot\HttpAgent;
 
+use Poirot\PathUri\UriHttp;
+use Poirot\PathUri\UriSequence;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamInterface;
 
@@ -248,7 +250,7 @@ class Browser extends aClient
      * @return $this
      * @throws \Exception
      */
-    function setPlatformSettings($options)
+    function setPlatformSetting($options)
     {
         $platform = $this->platform();
         if (!$platform instanceof ipConfigurable)
@@ -267,7 +269,7 @@ class Browser extends aClient
      *
      * @param string                      $method  Request Method
      * @param string                      $uri     Absolute Uri Or Relative To BaseUrl
-     * @param array|\Traversable|null     $options Browser Options Or Open Options Used By Plugins
+     * @param array|\Traversable|null     $options Platform Setting Or Open Options Used By Plugins
      * @param StreamInterface|string|null $body    Request Body
      * @param array|null                  $headers Specific Request Header/Replace Defaults
      *
@@ -298,23 +300,22 @@ class Browser extends aClient
                 $reqUrl->setPort($baseUrl->getPort());
 
                 ## Path
-                $reqUrl->prepend(new UriSequence($baseUrl->getPath()));
+                $pathPre = new UriSequence($baseUrl->getPath());
+                $reqUrl->prepend($pathPre);
             }
         }
 
         // TODO what if authority user-info exists how to connect to server with authority?
-        $command->setHost($reqUrl->getHost());
+        $command->setHost($reqUrl->getScheme().'://'.$reqUrl->getHost());
         // command target contains only path/to/resource
-        $reqUrl->setScheme(null)->setHost(null)->setUserInfo(null)->setPort(null);
-        $target = $reqUrl->toString();
-        $command->setTarget($target);
+        $command->setTarget(implode('/', $reqUrl->getPath()));
 
         $command->setHeaders($headers);
         $command->setBody($body);
 
         // let extra options received by Platform
         $command->setPlatformSettings($options);
-        
+
         return $command;
     }
     

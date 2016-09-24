@@ -3,9 +3,6 @@ namespace Poirot\HttpAgent\Platform;
 
 use Poirot\ApiClient\ResponseOfClient;
 
-use Poirot\Http\HttpResponse;
-use Poirot\Http\Interfaces\iHeader;
-
 use Poirot\Stream\Interfaces\iStreamable;
 use Psr\Http\Message\ResponseInterface;
 
@@ -20,14 +17,16 @@ class ResponsePlatform
      */
     function __construct(ResponseInterface $response)
     {
-        $this->rawbody = $response;
+        $this->response = $response;
 
-        $this->setRawBody($response->getBody());
-
-        /** @var iHeader $h */
+        # meta
         foreach($response->getHeaders() as $h => $_)
             $this->meta()->__set($h, $response->getHeaderLine($h));
 
+        # body
+        $this->setRawResponse($response);
+
+        # exception
         $code = $response->getStatusCode();
         if (!(200 <= $code && $code < 300))
             $this->setException(new \RuntimeException($response->getReasonPhrase(), $response->getStatusCode()));
@@ -41,24 +40,24 @@ class ResponsePlatform
     /**
      * Set Response Origin Content
      *
-     * @param iStreamable|string $content Content Body
+     * @param ResponseInterface $response
      *
      * @return $this
      */
-    function setRawBody($content)
+    function setRawResponse($response)
     {
-        $this->rawbody = $content;
+        $this->rawResponse = $response;
         return $this;
     }
 
     /**
      * Get Response Origin Body Content
      *
-     * @return iStreamable|string
+     * @return ResponseInterface
      */
-    function getRawBody()
+    function getRawResponse()
     {
-        return $this->rawbody;
+        return $this->rawResponse;
     }
 
 
@@ -67,7 +66,8 @@ class ResponsePlatform
     /**
      * @override ide completion
      * @param callable|null $callable
-     * @return HttpResponse
+     *
+     * @return ResponseInterface
      */
     function expected(callable $callable = null)
     {

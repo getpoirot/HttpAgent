@@ -49,17 +49,19 @@ class CommandRequestHttp
      */
     function __construct($options = null)
     {
-        if ($options instanceof Traversable)
-            $options = \Poirot\Std\cast($options)->toArray();
+        if ($options !== null) {
+            if ($options instanceof Traversable)
+                $options = \Poirot\Std\cast($options)->toArray();
 
-        if (!is_array($options))
-            throw new \InvalidArgumentException(sprintf(
-                'Options must be array or Traversable; given: (%s).'
-                , \Poirot\Std\flatten($options)
-            ));
-        
-        if (!isset($options['arguments']))
-            $options['arguments'] = $options;
+            if (!is_array($options))
+                throw new \InvalidArgumentException(sprintf(
+                    'Options must be array or Traversable; given: (%s).'
+                    , \Poirot\Std\flatten($options)
+                ));
+
+            if (!isset($options['arguments']))
+                $options['arguments'] = $options;
+        }
         
         parent::__construct($options);
     }
@@ -155,7 +157,7 @@ class CommandRequestHttp
      */
     function setHost($host)
     {
-        $this->host = (string) $host;
+        $this->host = rtrim( (string) $host, '/' );
         return $this;
     }
 
@@ -229,7 +231,7 @@ class CommandRequestHttp
 
     
     /** 
-     * @see Browser::setPlatformSettings
+     * @see Browser::setPlatformSetting
      * @see PlatformHttp // Options:
      */ 
     

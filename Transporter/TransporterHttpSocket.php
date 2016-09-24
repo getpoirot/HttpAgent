@@ -3,10 +3,6 @@ namespace Poirot\HttpAgent\Transporter;
 
 use Poirot\Connection\Http\ConnectionHttpSocket;
 
-use Poirot\Http\HttpResponse;
-use Poirot\Http\Interfaces\iHttpRequest;
-use Poirot\Http\Psr\RequestBridgeInPsr;
-
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
 
@@ -58,10 +54,10 @@ class TransporterHttpSocket
      * @var Streamable\STemporary */
     protected $_buffer;
     protected $_buffer_seek = 0; # current buffer write position
-    /** @var HttpResponse */
+    /** @var  */
     protected $_completed_response;
 
-    /** @var TransporterHttpEvents */
+    /** @var EventHeapTransporterHttp */
     protected $event;
 
 
@@ -108,7 +104,7 @@ class TransporterHttpSocket
     {
         ## handle prepare request headers event
         $httpRequest = clone $expr;
-        $this->event()->trigger(TransporterHttpEvents::EVENT_REQUEST_PREPARE_EXPRESSION, array(
+        $this->event()->trigger(EventHeapTransporterHttp::EVENT_REQUEST_PREPARE_EXPRESSION, array(
             'request'     => $httpRequest,
             'transporter' => $this,
         ));
@@ -127,9 +123,9 @@ class TransporterHttpSocket
     function canContinueWithReceivedHeaders(&$parsedResponse)
     {
         $result = parent::canContinueWithReceivedHeaders($parsedResponse);
-        
-        $emitter  = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED, array(
-            'parsed_response' => &$parsedResponse,
+
+        $emitter  = $this->event()->trigger(EventHeapTransporterHttp::EVENT_RESPONSE_HEADERS_RECEIVED, array(
+            'parsed_response' => $parsedResponse,
             'transporter'     => $this,
             'request'         => $this->getLastRequest(),
         ));
@@ -150,7 +146,7 @@ class TransporterHttpSocket
      */
     function finalizeResponseFromStream($response, $parsedResponse)
     {
-        $emitter = $this->event()->trigger(TransporterHttpEvents::EVENT_RESPONSE_RECEIVED, array(
+        $emitter = $this->event()->trigger(EventHeapTransporterHttp::EVENT_RESPONSE_RECEIVED, array(
             'parsed_response' => $parsedResponse,
             'response'        => $response,
             'request'         => $this->getLastRequest(),
@@ -159,7 +155,7 @@ class TransporterHttpSocket
 
         if ($r = $emitter->collector()->getResponse())
             $response = $r;
-        
+
         return parent::finalizeResponseFromStream($response, $parsedResponse);
     }
 
@@ -182,12 +178,12 @@ class TransporterHttpSocket
     /**
      * Get Events
      *
-     * @return TransporterHttpEvents
+     * @return EventHeapTransporterHttp
      */
     function event()
     {
         if (!$this->event)
-            $this->event = new TransporterHttpEvents;
+            $this->event = new EventHeapTransporterHttp;
 
         return $this->event;
     }
@@ -219,7 +215,7 @@ class TransporterHttpSocket
     protected function _attachDefaultListeners()
     {
         $this->event()->on(
-            TransporterHttpEvents::EVENT_REQUEST_PREPARE_EXPRESSION
+            EventHeapTransporterHttp::EVENT_REQUEST_PREPARE_EXPRESSION
             , new onRequestPrepareExpression
             , 100
         );
@@ -227,19 +223,19 @@ class TransporterHttpSocket
         // ...
 
         $this->event()->on(
-            TransporterHttpEvents::EVENT_RESPONSE_HEADERS_RECEIVED
+            EventHeapTransporterHttp::EVENT_RESPONSE_HEADERS_RECEIVED
             , new onResponseHeadersReceived
             , 100
         );
 
         $this->event()->on(
-            TransporterHttpEvents::EVENT_RESPONSE_RECEIVED
+            EventHeapTransporterHttp::EVENT_RESPONSE_RECEIVED
             , new onResponseReceived
             , 100
         );
 
         $this->event()->on(
-            TransporterHttpEvents::EVENT_RESPONSE_RECEIVED
+            EventHeapTransporterHttp::EVENT_RESPONSE_RECEIVED
             , new onResponseReceivedCloseConnection
             , -1000
         );

@@ -16,21 +16,21 @@ class onResponseReceivedCloseConnection
      * 
      * Close Connection when Response Received by Response Header 
      * 
-     * @param array                 $parsedResponse
+     * @param array                 $parsed_response
      * @param iStreamable           $response
      * @param RequestInterface      $request
      * @param TransporterHttpSocket $transporter
      * 
      * @return iStreamable|null
      */
-    function __invoke($parsedResponse = null, $response = null, $request = null, $transporter = null)
+    function __invoke($parsed_response = null, $response = null, $request = null, $transporter = null)
     {
         if (!$transporter->isConnected())
             // Nothing To Do!!
             return;
         
         ## Close the connection if requested to do so by the server
-        $headers = $parsedResponse['headers'];
+        $headers = $parsed_response['headers'];
         foreach ($headers as $key => $val) {
             if (strtolower($key) != 'connection')
                 continue;

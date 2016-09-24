@@ -18,14 +18,14 @@ class onResponseReceived
 {
     /**
      *
-     * @param array                 $parsedResponse
+     * @param array                 $parsed_response
      * @param iStreamable           $response
      * @param RequestInterface      $request
      * @param TransporterHttpSocket $transporter
      *
      * @return iStreamable|null
      */
-    function __invoke($parsedResponse = null, $response = null, $request = null, $transporter = null)
+    function __invoke($parsed_response = null, $response = null, $request = null, $transporter = null)
     {
         // Decoding Data:
 
@@ -33,20 +33,21 @@ class onResponseReceived
             ## do not decode body using raw data
             return;
 
-        $headers = $parsedResponse['headers'];
+        $headers = $parsed_response['headers'];
         foreach ($headers as $key => $val) {
             switch (strtolower($key)) {
                 // (!) Consider Alphabetic Sort If Order Is Mandatory
                 case 'content-encoding':
-                    $response = $this->_handleContentEncoding($response, $val);
+                    $response = $this->_handleContentEncoding($val, $response);
                     break;
                 case 'transfer-encoding':
-                    $response = $this->_handleTransferEncoding($response, $val);
+                    $response = $this->_handleTransferEncoding($val, $response);
                     break;
             }
         }
 
-        return $response;
+        // return manipulated response
+        return array('response' => $response);
     }
 
     /**
@@ -62,11 +63,17 @@ class onResponseReceived
             return $response;
 
         ## Uses PHP's zlib.inflate filter to inflate deflate or gzipped content
+        $stream  = new Streamable\SAggregateStreams();
 
-        $response->resource()->appendFilter(new FilterStreamPhpBuiltin('zlib.inflate'), STREAM_FILTER_READ);
+        $headers = \Poirot\Connection\Http\readAndSkipHeaders($response);
+        $stream->addStream(new Streamable\STemporary($headers));
         ### skip the first 10 bytes for zlib
-        $response = new Streamable\SLimitSegment($response, -1, 10);
-        return array('response' => $response);
+        // limit body stream from after headers to end
+        $body    = new Streamable\SLimitSegment($response, -1, $response->getCurrOffset() + 10);
+        $body->resource()->appendFilter(new FilterStreamPhpBuiltin('zlib.inflate'), STREAM_FILTER_READ);
+        $stream->addStream($body);
+
+        return $stream;
     }
 
     /**
@@ -82,6 +89,6 @@ class onResponseReceived
             return $response;
 
         $response->resource()->appendFilter(new DechunkFilter, STREAM_FILTER_READ);
-        return array('response' => $response);
+        return $response;
     }
 }

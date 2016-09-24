@@ -6,7 +6,7 @@ use Poirot\Events\Event\BuildEvent;
 use Poirot\Events\EventHeap;
 
 
-class TransporterHttpEvents 
+class EventHeapTransporterHttp
     extends EventHeap
 {
     const EVENT_REQUEST_PREPARE_EXPRESSION = 'request.send.prepare';

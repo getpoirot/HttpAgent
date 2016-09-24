@@ -1,6 +1,9 @@
 <?php
 namespace Poirot\HttpAgent\Platform;
 
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
 use Poirot\ApiClient\Interfaces\iPlatform;
 use Poirot\ApiClient\Interfaces\Request\iApiCommand;
 use Poirot\ApiClient\Interfaces\Response\iResponse;
@@ -8,28 +11,26 @@ use Poirot\ApiClient\Interfaces\Response\iResponse;
 use Poirot\Connection\Exception\ConnectException;
 use Poirot\Connection\Interfaces\iConnection;
 
-use Poirot\Http\Header\FactoryHttpHeader;
-use Poirot\Http\HttpRequest;
+use Poirot\Ioc\Container\BuildContainer;
 
-use Poirot\Http\Interfaces\iHeaders;
-use Poirot\Http\Interfaces\iHttpRequest;
-use Poirot\Http\Interfaces\iHttpResponse;
-use Poirot\Http\Psr\RequestBridgeInPsr;
-use Poirot\Http\Psr\ResponseBridgeInPsr;
+use Poirot\Psr7\HttpRequest;
+use Poirot\Psr7\HttpResponse;
+use Poirot\Psr7\Uri;
+
+use Poirot\Std\ConfigurableSetter;
+use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
+use Poirot\Std\Struct\DataOptionsOpen;
+
+use Poirot\Stream\Interfaces\iStreamable;
+use Poirot\Stream\Psr\StreamBridgeInPsr;
+use Poirot\Stream\Streamable\SLimitSegment;
+
 use Poirot\HttpAgent\Browser\Plugin\BaseBrowserPlugin;
 use Poirot\HttpAgent\Interfaces\iPluginBrowserExpression;
 use Poirot\HttpAgent\Interfaces\iPluginBrowserResponse;
 use Poirot\HttpAgent\Interfaces\iTransporterHttp;
 use Poirot\HttpAgent\CommandRequestHttp;
 use Poirot\HttpAgent\Transporter\TransporterHttpSocket;
-
-use Poirot\Ioc\Container\BuildContainer;
-use Poirot\Std\ConfigurableSetter;
-use Poirot\Std\Interfaces\Pact\ipOptionsProvider;
-use Poirot\Std\Struct\DataOptionsOpen;
-use Poirot\Stream\Interfaces\iStreamable;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 
 
 class PlatformHttp
@@ -133,7 +134,7 @@ class PlatformHttp
             if($plugin instanceof iPluginBrowserExpression) {
                 /** @var iPluginBrowserExpression $plugin */
                 $r = $plugin->withHttpRequest($request);
-                if ($r && $r instanceof iHttpRequest) {
+                if ($r && $r instanceof RequestInterface) {
                     $request = $r;
                     continue;
                 }
@@ -150,8 +151,17 @@ class PlatformHttp
         /** @var iStreamable $response */
         $response = $transporter->send($request);
 
-        kd($response->read());
-        
+
+        # Make Response
+        // TODO here aggregate stream has an error while reading headers and ...
+        $rHeaders = \Poirot\Connection\Http\readAndSkipHeaders($response, true);
+        $rHeaders = \Poirot\Connection\Http\parseResponseHeaders($rHeaders);
+        $body     = new SLimitSegment($response); // limit body from current offset to end stream
+
+        /** @var HttpResponse $response */
+        $response = new HttpResponse(new StreamBridgeInPsr($body), $rHeaders['status'], $rHeaders['headers']);
+
+
         # Finalize Response with Plugins
         foreach ($AvailablePlugins as $pluginName) {
             $service = $this->pluginManager()->get($pluginName);
@@ -300,6 +310,7 @@ class PlatformHttp
         return $this->pluginOptions;
     }
     
+    
     // ...
 
     /**
@@ -352,51 +363,51 @@ class PlatformHttp
      */
     protected function _makeExpressionRequest(CommandRequestHttp $command)
     {
-        $httpRequest = new HttpRequest;
+        $uri = new Uri($command->getHost().'/'.ltrim($command->getTarget(), '/'));
+
+        $httpRequest = new HttpRequest();
 
         ## request method
-        $httpRequest->setMethod($command->getMethod());
+        $httpRequest = $httpRequest
+            ->withMethod($command->getMethod())
+            ## request uri
+            ->withUri($uri)
+        ;
 
-        ## request host
-        $httpRequest->setHost($command->getHost());
+        ## request body
+        if ($body = $command->getBody())
+            $httpRequest = $httpRequest->withBody($body);
+
 
         ## request headers
 
         // default headers
-        $headersObject = $httpRequest->headers();
-        $this->_exprAddDefaultHeadersTo($headersObject);
+        $httpRequest = $this->_exprAddDefaultHeadersTo($httpRequest);
 
         // headers as request method options
-        if ($headers = $command->getHeaders())
-            $httpRequest->setHeaders($headers);
+        if ($headers = $command->getHeaders()) {
+            foreach ($headers as $name => $val)
+                $httpRequest = $httpRequest->withHeader($name, $val);
+        }
 
-
-        ## request uri
-        $httpRequest->setTarget($command->getTarget());
-
-        ## request body
-        $httpRequest->setBody($command->getBody());
-
-        $request = new RequestBridgeInPsr($httpRequest);
-        return $request;
+        return $httpRequest;
     }
 
     /**
-     * @param iHeaders $headersObject
+     * Attach Default Headers
+     * @param HttpRequest $httpRequest
+     * @return HttpRequest
      */
-    private function _exprAddDefaultHeadersTo($headersObject)
+    private function _exprAddDefaultHeadersTo($httpRequest)
     {
-        $headersObject->insert(FactoryHttpHeader::of(array(
-            'User-Agent' => 'xxxxxxx',
-        )));
+        $httpRequest = $httpRequest
+            // TODO User-Agent name
+            ->withHeader('User-Agent', 'xxxxxxx')
+            ->withHeader('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8')
+            ->withHeader('Cache-Control', 'no-cache')
+        ;
 
-        $headersObject->insert(FactoryHttpHeader::of(array(
-            'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        )));
-
-        $headersObject->insert(FactoryHttpHeader::of(array(
-            'Cache-Control' => 'no-cache',
-        )));
+        return $httpRequest;
     }
 
     // ..
