@@ -67,11 +67,18 @@ class onResponseReceived
 
         $headers = \Poirot\Connection\Http\readAndSkipHeaders($response);
         $stream->addStream(new Streamable\STemporary($headers));
+
         ### skip the first 10 bytes for zlib
         // limit body stream from after headers to end
         $body    = new Streamable\SLimitSegment($response, -1, $response->getCurrOffset() + 10);
         $body->resource()->appendFilter(new FilterStreamPhpBuiltin('zlib.inflate'), STREAM_FILTER_READ);
-        $stream->addStream($body);
+
+        // TODO complicated; with zlib.inflate stream just read once then all rewind reads are returns empty string
+        // So write again to temporary buffer
+        $temp = new Streamable\STemporary();
+        $body->pipeTo($temp);
+
+        $stream->addStream($temp);
 
         return $stream;
     }
