@@ -210,8 +210,6 @@ class TransporterHttpSocket
     }
 
 
-    // ... TODO some move outside
-
     protected function _attachDefaultListeners()
     {
         $this->event()->on(
