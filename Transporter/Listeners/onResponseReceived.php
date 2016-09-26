@@ -95,7 +95,22 @@ class onResponseReceived
             // Nothing To Do!
             return $response;
 
-        $response->resource()->appendFilter(new DechunkFilter, STREAM_FILTER_READ);
-        return $response;
+        $stream  = new Streamable\SAggregateStreams();
+
+        $headers = \Poirot\Connection\Http\readAndSkipHeaders($response);
+        $stream->addStream(new Streamable\STemporary($headers));
+
+        ### skip the first 10 bytes for zlib
+        // limit body stream from after headers to end
+        $body    = new Streamable\SLimitSegment($response, -1, $response->getCurrOffset());
+        $body->resource()->appendFilter(DechunkFilter::newInstance(), STREAM_FILTER_READ);
+
+        // So write again to temporary buffer
+        $temp = new Streamable\STemporary();
+        $body->pipeTo($temp);
+
+        $stream->addStream($temp);
+
+        return $stream;
     }
 }
