@@ -96,6 +96,7 @@ class Browser extends aClient
             // use alternative
             $uri = $request->getRequestTarget();
 
+
         $headers = array();
         foreach ($request->getHeaders() as $name => $_)
             $headers[$name] = $request->getHeaderLine($name);
@@ -306,9 +307,10 @@ class Browser extends aClient
         }
 
         // TODO what if authority user-info exists how to connect to server with authority?
-        $command->setHost($reqUrl->getScheme().'://'.$reqUrl->getHost());
+        $command->setHost($reqUrl->getScheme().'://'.$reqUrl->getHost().':'.$reqUrl->getPort(true));
         // command target contains only path/to/resource
-        $command->setTarget(implode('/', $reqUrl->getPath()));
+        $reqUrl->setScheme(null)->setPort(null)->setHost(null); // TODO is it better way to do this?
+        $command->setTarget( $reqUrl->toString() );
 
         $command->setHeaders($headers);
         $command->setBody($body);

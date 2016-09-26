@@ -69,7 +69,7 @@ class ResponsePlatform
      *
      * @return ResponseInterface
      */
-    function expected(callable $callable = null)
+    function expected(/*callable*/ $callable = null)
     {
         return parent::expected($callable);
     }

@@ -148,9 +148,11 @@ class PlatformHttp
 
 
         # Send Request Over Wire
+
         /** @var iStreamable $response */
         $response = $transporter->send($request);
 
+        
         # Make Response
         $rHeaders = \Poirot\Connection\Http\readAndSkipHeaders($response);
         $rHeaders = \Poirot\Connection\Http\parseResponseHeaders($rHeaders);
