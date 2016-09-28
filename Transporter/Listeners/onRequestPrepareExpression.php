@@ -3,10 +3,9 @@ namespace Poirot\HttpAgent\Transporter\Listeners;
 
 use Poirot\Events\Listener\aListener;
 
-use Poirot\Stream\Interfaces\iStreamable;
-
 use Poirot\HttpAgent\Transporter\TransporterHttpSocket;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\StreamInterface;
 
 
 class onRequestPrepareExpression 
@@ -30,7 +29,6 @@ class onRequestPrepareExpression
 
         /**
          * Http Messages With Body Should be with Content-Length
-         * !! without this post requests always not working
          * @see http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.4
          * @see https://issues.apache.org/jira/browse/TS-2902
          */
@@ -38,17 +36,20 @@ class onRequestPrepareExpression
 
         $length = false;
         if ($body) {
-            if ($body instanceof iStreamable)
+            if ($body instanceof StreamInterface)
                 $length = $body->getSize();
             else
                 $length = strlen($body);
+            
+            
         }
 
         if ($length !== false) {
-            if (!$request->getHeader('Content-Length'))
+            if (!$request->getHeader('Content-Length')) {
                 $request = $request->withHeader('Content-Length', (string) $length);
+            }
         }
-        
-        return $request;
+
+        return array('request' => $request);
     }
 }

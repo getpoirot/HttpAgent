@@ -3,12 +3,12 @@ namespace Poirot\HttpAgent\Transporter;
 
 use Poirot\Connection\Http\ConnectionHttpSocket;
 
+use Poirot\HttpAgent\Transporter\Listeners\onRequestPrepareExpression;
 use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Streamable;
 
 use Poirot\HttpAgent\Interfaces\iTransporterHttp;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseReceivedCloseConnection;
-use Poirot\HttpAgent\Transporter\Listeners\onRequestPrepareExpression;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseReceived;
 use Poirot\HttpAgent\Transporter\Listeners\onResponseHeadersReceived;
 use Psr\Http\Message\RequestInterface;
@@ -104,10 +104,13 @@ class TransporterHttpSocket
     {
         ## handle prepare request headers event
         $httpRequest = clone $expr;
-        $this->event()->trigger(EventHeapTransporterHttp::EVENT_REQUEST_PREPARE_EXPRESSION, array(
+        $emitter = $this->event()->trigger(EventHeapTransporterHttp::EVENT_REQUEST_PREPARE_EXPRESSION, array(
             'request'     => $httpRequest,
             'transporter' => $this,
         ));
+
+        if ($request = $emitter->collector()->getRequest())
+            $expr = $request;
         
         return parent::makeStreamFromRequestExpression($expr);
     }

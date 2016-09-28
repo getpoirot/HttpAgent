@@ -1,11 +1,12 @@
 <?php
 namespace Poirot\HttpAgent\Platform;
 
+use Poirot\HttpAgent\Interfaces\Browser\iPluginBrowser;
+use Poirot\HttpAgent\Platform\Plugin\ServiceAggregate;
 use Poirot\Ioc\Container\aContainerCapped;
 use Poirot\Ioc\Container\BuildContainer;
 use Poirot\Ioc\Container\Exception\exContainerInvalidServiceType;
 
-use Poirot\HttpAgent\Interfaces\iPluginBrowser;
 
 
 /**
@@ -36,7 +37,7 @@ class PluginsOfBrowser
     {
         parent::__construct($cBuilder);
         
-        
+        $this->set(new ServiceAggregate);
     }
 
     /**

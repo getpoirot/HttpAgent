@@ -1,9 +1,8 @@
 <?php
-namespace Poirot\HttpAgent\Browser\Plugin;
+namespace Poirot\HttpAgent\Platform\Plugin;
 
+use Poirot\HttpAgent\Interfaces\Browser\iPluginBrowser;
 use Poirot\Std\Struct\DataOptionsOpen;
-
-use Poirot\HttpAgent\Interfaces\iPluginBrowser;
 
 
 class BaseBrowserPlugin 

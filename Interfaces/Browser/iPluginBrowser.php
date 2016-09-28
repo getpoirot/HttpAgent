@@ -1,5 +1,5 @@
 <?php
-namespace Poirot\HttpAgent\Interfaces;
+namespace Poirot\HttpAgent\Interfaces\Browser;
 
 use Poirot\Std\Interfaces\Struct\iDataOptions;
 
