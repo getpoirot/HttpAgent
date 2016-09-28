@@ -150,7 +150,6 @@ class PlatformHttp
         /** @var iStreamable $response */
         $response = $transporter->send($request);
 
-        kd($response->read());
         
         # Make Response
         $rHeaders = \Poirot\Connection\Http\readAndSkipHeaders($response);
