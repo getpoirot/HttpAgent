@@ -35,9 +35,8 @@ class PluginsOfBrowser
     function __construct(BuildContainer $cBuilder = null)
     {
         parent::__construct($cBuilder);
-
-        // Add Initializer To Inject Http Message Instance:
-
+        
+        
     }
 
     /**

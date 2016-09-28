@@ -7,11 +7,11 @@ use Poirot\Stream\Streamable\STemporary;
 use Psr\Http\Message\RequestInterface;
 
 
-class BrowserPluginFormData
+class BrowserPluginFormUrlEncode
     extends BaseBrowserPlugin
     implements iPluginBrowserExpression
 {
-    const SERVICE_NAME = 'form-data';
+    const SERVICE_NAME = 'form-urlencode-data';
 
     /**
      * Manipulate Http Request
@@ -25,7 +25,7 @@ class BrowserPluginFormData
         $params  = \Poirot\Std\cast($this)->toArray();
         $body    = http_build_query($params, null, '&');
 
-        $stream  = ;
+        $stream  = new STemporary($body);
         $stream  = new StreamBridgeInPsr($stream->rewind());
 
         $request = $request
