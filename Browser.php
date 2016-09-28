@@ -45,7 +45,7 @@ class Browser extends aClient
      */
     function __construct($baseUrlOrOptions = null, $ops = null)
     {
-        if ($baseUrlOrOptions !== null && is_string($baseUrlOrOptions))
+        if ($baseUrlOrOptions !== null && \Poirot\Std\isStringify($baseUrlOrOptions))
             $this->setBaseUrl($baseUrlOrOptions);
         elseif ($baseUrlOrOptions !== null)
             $ops = $baseUrlOrOptions;
