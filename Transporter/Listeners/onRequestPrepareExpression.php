@@ -44,11 +44,8 @@ class onRequestPrepareExpression
             
         }
 
-        if ($length !== false) {
-            if (!$request->getHeader('Content-Length')) {
-                $request = $request->withHeader('Content-Length', (string) $length);
-            }
-        }
+        if ($length !== false)
+            $request = $request->withHeader('Content-Length', (string) $length);
 
         return array('request' => $request);
     }
