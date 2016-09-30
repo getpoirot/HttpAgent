@@ -8,9 +8,9 @@ class ServiceAggregate
     extends aServiceAggregate
 {
     protected $_services_map = array(
-        PluginFormData::SERVICE_NAME          => __NAMESPACE__.'\\PluginFormData',
-        PluginFormUrlEncodeData::SERVICE_NAME => __NAMESPACE__.'\\PluginFormUrlEncodeData',
-        PluginJsonData::SERVICE_NAME          => __NAMESPACE__.'\\PluginJsonData',
+        PluginFormData::SERVICE_NAME          => 'Poirot\HttpAgent\Platform\Plugin\PluginFormData',
+        PluginFormUrlEncodeData::SERVICE_NAME => 'Poirot\HttpAgent\Platform\Plugin\PluginFormUrlEncodeData',
+        PluginJsonData::SERVICE_NAME          => 'Poirot\HttpAgent\Platform\Plugin\PluginJsonData',
     );
 
     
