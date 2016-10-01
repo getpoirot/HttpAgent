@@ -1,6 +1,9 @@
 <?php
 namespace Poirot\HttpAgent\Platform;
 
+use Poirot\HttpAgent\Interfaces\Browser\iPluginBrowserExpression;
+use Poirot\HttpAgent\Interfaces\Browser\iPluginBrowserResponse;
+use Poirot\HttpAgent\Platform\Plugin\BaseBrowserPlugin;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -25,9 +28,6 @@ use Poirot\Stream\Interfaces\iStreamable;
 use Poirot\Stream\Psr\StreamBridgeInPsr;
 use Poirot\Stream\Streamable\SLimitSegment;
 
-use Poirot\HttpAgent\Browser\Plugin\BaseBrowserPlugin;
-use Poirot\HttpAgent\Interfaces\iPluginBrowserExpression;
-use Poirot\HttpAgent\Interfaces\iPluginBrowserResponse;
 use Poirot\HttpAgent\Interfaces\iTransporterHttp;
 use Poirot\HttpAgent\CommandRequestHttp;
 use Poirot\HttpAgent\Transporter\TransporterHttpSocket;
@@ -146,9 +146,7 @@ class PlatformHttp
             }
         }
 
-
         # Send Request Over Wire
-
         /** @var iStreamable $response */
         $response = $transporter->send($request);
 

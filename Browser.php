@@ -46,7 +46,7 @@ class Browser extends aClient
     function __construct($baseUrlOrOptions = null, $ops = null)
     {
         if ($baseUrlOrOptions !== null && \Poirot\Std\isStringify($baseUrlOrOptions))
-            $this->setBaseUrl($baseUrlOrOptions);
+            $this->setBaseUrl( (string) $baseUrlOrOptions);
         elseif ($baseUrlOrOptions !== null)
             $ops = $baseUrlOrOptions;
 
@@ -301,11 +301,13 @@ class Browser extends aClient
                 $reqUrl->setPort($baseUrl->getPort());
 
                 ## Path
-                $pathPre = new UriSequence($baseUrl->getPath());
+                $pathPre = new UriSequence;
+                $pathPre->setPath($baseUrl->getPath());
                 $reqUrl->prepend($pathPre);
             }
         }
 
+        
         // TODO what if authority user-info exists how to connect to server with authority?
         $command->setHost($reqUrl->getScheme().'://'.$reqUrl->getHost().':'.$reqUrl->getPort(true));
         // command target contains only path/to/resource
@@ -314,6 +316,7 @@ class Browser extends aClient
 
         $command->setHeaders($headers);
         $command->setBody($body);
+
 
         // let extra options received by Platform
         $command->setPlatformSettings($options);

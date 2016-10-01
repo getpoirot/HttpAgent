@@ -1,11 +1,12 @@
 <?php
 namespace Poirot\HttpAgent\Platform;
 
+use Poirot\HttpAgent\Interfaces\Browser\iPluginBrowser;
+use Poirot\HttpAgent\Platform\Plugin\ServiceAggregate;
 use Poirot\Ioc\Container\aContainerCapped;
 use Poirot\Ioc\Container\BuildContainer;
 use Poirot\Ioc\Container\Exception\exContainerInvalidServiceType;
 
-use Poirot\HttpAgent\Interfaces\iPluginBrowser;
 
 
 /**
@@ -35,9 +36,8 @@ class PluginsOfBrowser
     function __construct(BuildContainer $cBuilder = null)
     {
         parent::__construct($cBuilder);
-
-        // Add Initializer To Inject Http Message Instance:
-
+        
+        $this->set(new ServiceAggregate);
     }
 
     /**

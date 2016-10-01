@@ -1,5 +1,5 @@
 <?php
-namespace Poirot\HttpAgent\Browser\Plugin;
+namespace Poirot\HttpAgent\Platform\Plugin;
 
 /**
  * User agents MAY ignore Set-Cookie headers contained in
