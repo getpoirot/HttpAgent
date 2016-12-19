@@ -13,6 +13,7 @@
         "poirot/std": "dev-devel"
         , "poirot/ioc": "dev-devel"
         , "poirot/api-client": "dev-devel"
+        , "poirot/connection": "dev-devel"
         , "poirot/psr7-http": "dev-devel"
         , "poirot/http": "dev-devel"
         , "poirot/pathuri": "dev-devel"
